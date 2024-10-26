@@ -1,0 +1,43 @@
+﻿@page "/productlist"
+@using PickingRoute.Models
+@using PickingRoute.Services
+@rendermode InteractiveServer
+@inject ProductListService _productService
+
+<PageTitle>ProducList</PageTitle>
+
+<!-- CSSファイルの読み込み-->
+<link href="/CSS/ProductList.css" rel="stylesheet" />
+
+<h1>Product List</h1>
+
+<table>
+	<thead>
+		<tr>
+			<th class="left-align">Product Name </th>
+			<th class="right-align">Location X</th>
+			<th class="right-align">Location Y</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in _productItems)
+		{
+			<tr>
+				<td class="left-align">@item.ProductName</td>
+				<td class="right-align">@item.strangeLocationX</td>
+				<td class="right-align">@item.strangeLocationY</td>
+			</tr>
+		}
+	</tbody>
+</table>
+
+
+@code {
+	private List<ProductItem> _productItems = new(); 
+
+	protected override async Task OnInitializedAsync()
+	{
+		_productItems = await _productService.GetProductAsync();
+	}
+
+}
