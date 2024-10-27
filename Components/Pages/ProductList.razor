@@ -6,9 +6,6 @@
 
 <PageTitle>ProducList</PageTitle>
 
-<!-- CSSファイルの読み込み-->
-<link href="/CSS/ProductList.css" rel="stylesheet" />
-
 <h1>Product List</h1>
 
 <table class="table">
@@ -17,27 +14,137 @@
 			<th>Product Name </th>
 			<th>Location X</th>
 			<th >Location Y</th>
+			<th></th>
+			<th></th>
 		</tr>
 	</thead>
 	<tbody>
 		@foreach (var item in _productItems)
 		{
 			<tr>
-				<td>@item.ProductName</td>
-				<td>@item.strangeLocationX</td>
-				<td>@item.strangeLocationY</td>
+				@* 商品名*@
+				<td>
+					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
+					{
+						<input @bind="_editingProductItem.ProductName" placeholder="Edit title" />
+					}
+					else
+					{
+						@item.ProductName
+					}
+				</td>
+
+				@* X座標*@
+				<td>
+					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
+					{
+						<input @bind="_editingProductItem.strangeLocationX" placeholder="Edit strangeLocationX" />
+					}
+					else
+					{
+						@item.strangeLocationX
+					}
+				</td>
+
+				@* Y座標*@
+				<td>
+					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
+					{
+						<input @bind="_editingProductItem.strangeLocationY" placeholder="Edit strangeLocationY" />
+					}
+					else
+					{
+						@item.strangeLocationY
+					}
+				</td>
+
+				@* 保存ボタンもしくは編集ボタン*@
+				<td>
+					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
+					{
+						<button @onclick="UpdateProductAsync">Save</button>
+					}
+					else
+					{
+						<button @onclick="() => EnterEditMode(item)">Edit</button>
+					}
+				</td>
+				@* 削除ボタン*@
+				<td>
+					<button @onclick="() => DeleteProductAsync(item.ProductId)">Delete</button>
+				</td>
+
 			</tr>
 		}
 	</tbody>
 </table>
 
+@* 新規追加*@
+<input @bind="_newProductItem.ProductName" placeholder="New Product Name"/>
+<input @bind="_newProductItem.strangeLocationX" placeholder="New strangeLocationX"/>
+<input @bind="_newProductItem.strangeLocationY" placeholder="New strangeLocationY"/>
+<button @onclick="AddTodoAsync">Add</button>
 
 @code {
-	private List<ProductItem> _productItems = new(); 
+	private List<ProductItem> _productItems = new();
+	private ProductItem _newProductItem = new ProductItem();
+	private ProductItem? _editingProductItem;
 
+	//初期化、商品リスト一覧の読み込み
 	protected override async Task OnInitializedAsync()
 	{
-		_productItems = await _productService.GetProductAsync();
+		await ReloadProductsAsync();
 	}
+
+	// 商品一覧の読み込む
+	private async Task ReloadProductsAsync()
+	{
+		_productItems = await _productService.GetProductsAsync();
+	}
+
+	// 編集ボタンを押した時の処理
+	// 対象商品をインスタンス化し、プロパティ値をコピーする
+	private void EnterEditMode(ProductItem productItem)
+	{
+		_editingProductItem = new ProductItem
+			{
+				ProductId = productItem.ProductId,
+				ProductName = productItem.ProductName,
+				strangeLocationX = productItem.strangeLocationX,
+				strangeLocationY = productItem.strangeLocationY
+			};
+	}
+
+	// 更新
+	private async Task UpdateProductAsync()
+	{
+		if (_editingProductItem != null)
+		{
+			await _productService.UpdateProductAsync(_editingProductItem);
+			// 更新後、変数を初期化
+			_editingProductItem = null;
+			// 再読み込み
+			await ReloadProductsAsync();
+		}
+	}
+
+	// 削除
+	private async Task DeleteProductAsync(int id)
+	{
+		await _productService.DeleteProductAsync(id);
+		await ReloadProductsAsync();
+	}
+
+	// 追加
+	private async Task AddTodoAsync()
+	{
+		await _productService.AddProductAsync(_newProductItem);
+		// 追加後、変数を初期化
+		_newProductItem = new ProductItem();
+		// 再読み込み
+		await ReloadProductsAsync();
+	}
+
+
 
 }
