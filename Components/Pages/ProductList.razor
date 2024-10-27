@@ -11,21 +11,21 @@
 
 <h1>Product List</h1>
 
-<table>
+<table class="table">
 	<thead>
 		<tr>
-			<th class="left-align">Product Name </th>
-			<th class="right-align">Location X</th>
-			<th class="right-align">Location Y</th>
+			<th>Product Name </th>
+			<th>Location X</th>
+			<th >Location Y</th>
 		</tr>
 	</thead>
 	<tbody>
 		@foreach (var item in _productItems)
 		{
 			<tr>
-				<td class="left-align">@item.ProductName</td>
-				<td class="right-align">@item.strangeLocationX</td>
-				<td class="right-align">@item.strangeLocationY</td>
+				<td>@item.ProductName</td>
+				<td>@item.strangeLocationX</td>
+				<td>@item.strangeLocationY</td>
 			</tr>
 		}
 	</tbody>
