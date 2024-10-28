@@ -1,0 +1,26 @@
+﻿@using PickingRoute.Models
+
+<EditForm Model="@ProductItem" OnValidSubmit="OnSubmit" style="display: inline">
+
+	<DataAnnotationsValidator />
+
+	<InputText @bind-Value="ProductItem.ProductName" placeholder="Product Name" />
+	<ValidationMessage For="@(() => ProductItem.ProductName)"/>
+
+	<InputNumber @bind-Value="ProductItem.strangeLocationX" placeholder="Location X" />
+	<ValidationMessage For="@(() => ProductItem.strangeLocationX)" />
+
+	<InputNumber @bind-Value="ProductItem.strangeLocationY" placeholder="Location Y" />
+	<ValidationMessage For="@(() => ProductItem.strangeLocationY)" />
+
+	<button type="submit">@ButtonText</button>
+
+</EditForm>
+
+@code {
+
+	[Parameter] public ProductItem ProductItem { get; set; } = new ProductItem();
+	[Parameter] public string ButtonText { get; set; } = "Submit";
+	[Parameter] public string Placeholder { get; set; } = "";
+	[Parameter] public Func<Task> OnSubmit { get; set; } = () => Task.CompletedTask;
+}

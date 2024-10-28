@@ -1,4 +1,5 @@
 ﻿@page "/productlist"
+@using PickingRoute.Components.Shared
 @using PickingRoute.Models
 @using PickingRoute.Services
 @rendermode InteractiveServer
@@ -8,82 +9,63 @@
 
 <h1>Product List</h1>
 
-<table class="table">
-	<thead>
-		<tr>
-			<th>Product Name </th>
-			<th>Location X</th>
-			<th >Location Y</th>
-			<th></th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
-		@foreach (var item in _productItems)
-		{
-			<tr>
-				@* 商品名*@
-				<td>
-					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
-					{
-						<input @bind="_editingProductItem.ProductName" placeholder="Edit title" />
-					}
-					else
-					{
-						@item.ProductName
-					}
-				</td>
+@foreach (var item in _productItems)
+{
+	<ul>
+		<li>
+			@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
+			{
+				<!--更新-->
+				<EditForm Model="_editingProductItem" OnValidSubmit="UpdateProductAsync">
+					<DataAnnotationsValidator />
 
-				@* X座標*@
-				<td>
-					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
-					{
-						<input @bind="_editingProductItem.strangeLocationX" placeholder="Edit strangeLocationX" />
-					}
-					else
-					{
-						@item.strangeLocationX
-					}
-				</td>
+					<InputText @bind-Value="_editingProductItem.ProductName" placeholder="Edit title" />
+					<ValidationMessage For="@(() => _editingProductItem.ProductName)" />
 
-				@* Y座標*@
-				<td>
-					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
-					{
-						<input @bind="_editingProductItem.strangeLocationY" placeholder="Edit strangeLocationY" />
-					}
-					else
-					{
-						@item.strangeLocationY
-					}
-				</td>
+					<InputNumber @bind-Value="_editingProductItem.strangeLocationX" placeholder="Edit strangeLocationX" />
+					<ValidationMessage For="@(() => _editingProductItem.strangeLocationX)" />
 
-				@* 保存ボタンもしくは編集ボタン*@
-				<td>
-					@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
-					{
-						<button @onclick="UpdateProductAsync">Save</button>
-					}
-					else
-					{
-						<button @onclick="() => EnterEditMode(item)">Edit</button>
-					}
-				</td>
-				@* 削除ボタン*@
-				<td>
-					<button @onclick="() => DeleteProductAsync(item.ProductId)">Delete</button>
-				</td>
+					<InputNumber @bind-Value="_editingProductItem.strangeLocationY" placeholder="Edit strangeLocationY" />
+					<ValidationMessage For="@(() => _editingProductItem.strangeLocationY)" />
 
-			</tr>
-		}
-	</tbody>
-</table>
+					<button type="submit">Save</button>
+				</EditForm>
+			}
+			else
+			{
+				<!--表示、編集ボタン-->
+				@item.ProductName
+				@item.strangeLocationX
+				@item.strangeLocationY
+				<button @onclick="() => EnterEditMode(item)">Edit</button>
+			}
 
-@* 新規追加*@
-<input @bind="_newProductItem.ProductName" placeholder="New Product Name"/>
-<input @bind="_newProductItem.strangeLocationX" placeholder="New strangeLocationX"/>
-<input @bind="_newProductItem.strangeLocationY" placeholder="New strangeLocationY"/>
-<button @onclick="AddTodoAsync">Add</button>
+			<!--削除ボタン-->
+			<button @onclick="() => DeleteProductAsync(item.ProductId)">Delete</button>
+		</li>
+	</ul>
+
+}
+
+<!--新規追加-->
+@*
+
+<EditForm Model="_newProductItem" OnValidSubmit="AddTodoAsync" style="display: inline">
+	<DataAnnotationsValidator />
+
+	<input @bind="_newProductItem.ProductName" placeholder="New Product Name" />
+	<ValidationMessage For="@(() => _newProductItem.ProductName)" />
+
+	<input @bind="_newProductItem.strangeLocationX" placeholder="New strangeLocationX" />
+	<ValidationMessage For="@(() => _newProductItem.strangeLocationX)" />
+
+	<input @bind="_newProductItem.strangeLocationY" placeholder="New strangeLocationY" />
+	<ValidationMessage For="@(() => _newProductItem.strangeLocationY)" />
+
+	<button type="submit">Add</button>
+</EditForm>
+*@
+<ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" Placeholder="New Product Name" ButtonText="Add" />
 
 @code {
 	private List<ProductItem> _productItems = new();
