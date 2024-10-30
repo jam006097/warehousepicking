@@ -11,61 +11,31 @@
 
 @foreach (var item in _productItems)
 {
-	<ul>
-		<li>
+	<ul class="list-unstyled">
+		<li class="mb-3 d-flex align-items-center">
 			@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
 			{
 				<!--更新-->
-				<EditForm Model="_editingProductItem" OnValidSubmit="UpdateProductAsync">
-					<DataAnnotationsValidator />
-
-					<InputText @bind-Value="_editingProductItem.ProductName" placeholder="Edit title" />
-					<ValidationMessage For="@(() => _editingProductItem.ProductName)" />
-
-					<InputNumber @bind-Value="_editingProductItem.strangeLocationX" placeholder="Edit strangeLocationX" />
-					<ValidationMessage For="@(() => _editingProductItem.strangeLocationX)" />
-
-					<InputNumber @bind-Value="_editingProductItem.strangeLocationY" placeholder="Edit strangeLocationY" />
-					<ValidationMessage For="@(() => _editingProductItem.strangeLocationY)" />
-
-					<button type="submit">Save</button>
-				</EditForm>
+				<ProductItemEditor ProductItem="_editingProductItem" OnSubmit="UpdateProductAsync" ButtonText="Save" />
 			}
 			else
 			{
 				<!--表示、編集ボタン-->
-				@item.ProductName
-				@item.strangeLocationX
-				@item.strangeLocationY
-				<button @onclick="() => EnterEditMode(item)">Edit</button>
+				<div class="d-inline-block me-3">@item.ProductName</div>
+				<div class="d-inline-block me-3">@item.strangeLocationX</div>
+				<div class="d-inline-block me-3">@item.strangeLocationY</div>
+				<button @onclick="() => EnterEditMode(item)" class="btn btn-sm btn-primary me-2">Edit</button>
 			}
 
 			<!--削除ボタン-->
-			<button @onclick="() => DeleteProductAsync(item.ProductId)">Delete</button>
+			<button @onclick="() => DeleteProductAsync(item.ProductId)" class="btn btn-sm btn-danger">Delete</button>
 		</li>
 	</ul>
 
 }
 
 <!--新規追加-->
-@*
-
-<EditForm Model="_newProductItem" OnValidSubmit="AddTodoAsync" style="display: inline">
-	<DataAnnotationsValidator />
-
-	<input @bind="_newProductItem.ProductName" placeholder="New Product Name" />
-	<ValidationMessage For="@(() => _newProductItem.ProductName)" />
-
-	<input @bind="_newProductItem.strangeLocationX" placeholder="New strangeLocationX" />
-	<ValidationMessage For="@(() => _newProductItem.strangeLocationX)" />
-
-	<input @bind="_newProductItem.strangeLocationY" placeholder="New strangeLocationY" />
-	<ValidationMessage For="@(() => _newProductItem.strangeLocationY)" />
-
-	<button type="submit">Add</button>
-</EditForm>
-*@
-<ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" Placeholder="New Product Name" ButtonText="Add" />
+<ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" ButtonText="Add" />
 
 @code {
 	private List<ProductItem> _productItems = new();

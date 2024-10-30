@@ -5,15 +5,15 @@
 	<DataAnnotationsValidator />
 
 	<InputText @bind-Value="ProductItem.ProductName" placeholder="Product Name" />
-	<ValidationMessage For="@(() => ProductItem.ProductName)"/>
+	<ValidationMessage For="@(() => ProductItem.ProductName)" style="display: inline"/>
 
 	<InputNumber @bind-Value="ProductItem.strangeLocationX" placeholder="Location X" />
-	<ValidationMessage For="@(() => ProductItem.strangeLocationX)" />
+	<ValidationMessage For="@(() => ProductItem.strangeLocationX)" style="display: inline" />
 
-	<InputNumber @bind-Value="ProductItem.strangeLocationY" placeholder="Location Y" />
-	<ValidationMessage For="@(() => ProductItem.strangeLocationY)" />
+	<ValidationMessage For="@(() => ProductItem.strangeLocationY)" style="display: inline" />
+	<InputNumber @bind-Value="ProductItem.strangeLocationY" placeholder="Location Y"/>
 
-	<button type="submit">@ButtonText</button>
+	<button type="submit" class="btn btn-sm btn-primary me-2">@ButtonText</button>
 
 </EditForm>
 
