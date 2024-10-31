@@ -72,6 +72,7 @@ namespace PickingRoute.Services
 		}
 
 		// productIDから商品一覧を取得します
+		// 例外が発生した場合、カスタム例外をスローします。
 		private async Task<ProductItem> GetProductItemAsyncFromID(int productId)
 		{
 			var productItem = await _context.ProductItems.FindAsync(productId);

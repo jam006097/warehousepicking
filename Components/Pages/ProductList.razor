@@ -9,6 +9,14 @@
 
 <h1>Product List</h1>
 
+// DBへの処理成否のメッセージ
+@if (!string.IsNullOrEmpty(_latestMessage))
+{
+	<div class="alert @(_isLatestMessageSuccess ? "alert-success" :"alert-danger")">
+		@_latestMessage
+	</div>
+}
+
 @foreach (var item in _productItems)
 {
 	<ul class="list-unstyled">
@@ -42,6 +50,9 @@
 	private ProductItem _newProductItem = new ProductItem();
 	private ProductItem? _editingProductItem;
 
+	private string? _latestMessage;
+	private bool _isLatestMessageSuccess;
+
 	//初期化、商品リスト一覧の読み込み
 	protected override async Task OnInitializedAsync()
 	{
@@ -51,7 +62,14 @@
 	// 商品一覧の読み込む
 	private async Task ReloadProductsAsync()
 	{
-		_productItems = await _productService.GetProductsAsync();
+		try
+		{
+			_productItems = await _productService.GetProductsAsync();
+		}
+		catch (ProductListServiceException ex)
+		{
+			SetUserMessage($"Error loading todos: {ex.Message}", false);
+		}
 	}
 
 	// 編集ボタンを押した時の処理
@@ -72,31 +90,60 @@
 	{
 		if (_editingProductItem != null)
 		{
-			await _productService.UpdateProductAsync(_editingProductItem);
-			// 更新後、変数を初期化
-			_editingProductItem = null;
-			// 再読み込み
-			await ReloadProductsAsync();
+			try
+			{
+				await _productService.UpdateProductAsync(_editingProductItem);
+				// 更新後、変数を初期化
+				_editingProductItem = null;
+				// 再読み込み
+				await ReloadProductsAsync();
+				SetUserMessage("Puroduct item updated successfully.", true);
+			}
+			catch (ProductListServiceException ex)
+			{
+				SetUserMessage($"Error updating product: {ex.Message}", false);	
+			}
 		}
 	}
 
 	// 削除
 	private async Task DeleteProductAsync(int id)
 	{
-		await _productService.DeleteProductAsync(id);
-		await ReloadProductsAsync();
+		try
+		{
+			await _productService.DeleteProductAsync(id);
+			await ReloadProductsAsync();
+			SetUserMessage("Product item deleted successfully.", true);	
+		}
+		catch (ProductListServiceException ex)
+		{
+			SetUserMessage($"Error deleting product: {ex.Message}", false);
+		}
 	}
 
 	// 追加
 	private async Task AddTodoAsync()
 	{
-		await _productService.AddProductAsync(_newProductItem);
-		// 追加後、変数を初期化
-		_newProductItem = new ProductItem();
-		// 再読み込み
-		await ReloadProductsAsync();
+		try
+		{
+			await _productService.AddProductAsync(_newProductItem);
+			// 追加後、変数を初期化
+			_newProductItem = new ProductItem();
+			// 再読み込み
+			await ReloadProductsAsync();
+			SetUserMessage("Todo item added successfully.", true);
+		}
+		catch (ProductListServiceException ex)
+		{
+			SetUserMessage($"Error adding product: {ex.Message}", false);
+	}
 	}
 
+	private void SetUserMessage(string message, bool isSuccess)
+	{
+		_latestMessage = message + " " + DateTime.Now.ToString("HH:mm:ss");
+		_isLatestMessageSuccess = isSuccess;
+	}
 
 
 }
