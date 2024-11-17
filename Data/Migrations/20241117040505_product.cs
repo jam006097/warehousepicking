@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace PickingRoute.Migrations
+namespace PickingRoute.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddProductItem : Migration
+    public partial class product : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +16,7 @@ namespace PickingRoute.Migrations
                 {
                     ProductId = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ProductName = table.Column<string>(type: "TEXT", nullable: false),
+                    ProductName = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     strangeLocationX = table.Column<int>(type: "INTEGER", nullable: false),
                     strangeLocationY = table.Column<int>(type: "INTEGER", nullable: false)
                 },

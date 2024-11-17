@@ -8,11 +8,11 @@ using PickingRoute.Data;
 
 #nullable disable
 
-namespace PickingRoute.Migrations
+namespace PickingRoute.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241026023551_AddProductItem")]
-    partial class AddProductItem
+    [Migration("20241117040505_product")]
+    partial class product
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -220,6 +220,7 @@ namespace PickingRoute.Migrations
 
                     b.Property<string>("ProductName")
                         .IsRequired()
+                        .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("strangeLocationX")
