@@ -1,0 +1,30 @@
+﻿@page "/productcheck"
+@using Microsoft.EntityFrameworkCore
+@using PickingRoute.Data
+@using PickingRoute.Models
+@using PickingRoute.Services
+@inject ApplicationDbContext dbContext
+
+<h1>ピッキングリスト作成</h1>
+
+@foreach (var item in _productItems)
+{
+	<ul>
+		<li>
+			@item.ProductName
+			<input type="checkbox" checked="" />
+		</li>
+	</ul>
+}
+
+@code {
+	private List<ProductItem> _productItems = new();
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		_productItems = await dbContext.ProductItems.ToListAsync();
+	}
+
+
+}
