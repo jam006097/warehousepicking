@@ -1,4 +1,5 @@
 ﻿@page "/productcheck"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using PickingRoute.Data
 @using PickingRoute.Models
@@ -12,19 +13,49 @@
 	<ul>
 		<li>
 			@item.ProductName
-			<input type="checkbox" checked="" />
+			<input type="checkbox" @onclick = "() => UpdatePickingList(item)">
 		</li>
 	</ul>
 }
 
+<h2>ピッキングリスト</h2>
+
+<ul>
+	@foreach (var item in _PickingItems)
+	{
+		<li>@item.ProductName</li>
+	}
+</ul>
+
+
 @code {
 	private List<ProductItem> _productItems = new();
+	private List<ProductItem> _PickingItems = new();
 
-
+	/// <summary>
+	/// 初期化処理
+	/// 商品一覧を取得する
+	/// </summary>
+	/// <returns></returns>
 	protected override async Task OnInitializedAsync()
 	{
 		_productItems = await dbContext.ProductItems.ToListAsync();
 	}
 
+	/// <summary>
+	/// ピッキングリストを作成・更新する
+	/// </summary>
+	/// <param name="item"></param>
+	private void UpdatePickingList(ProductItem item)
+	{
+		if (!_PickingItems.Contains(item))
+		{
+			_PickingItems.Add(item);
+		}
+		else
+		{
+			_PickingItems.Remove(item);
+		}
+	}
 
 }
