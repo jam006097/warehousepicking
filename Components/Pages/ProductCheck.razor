@@ -28,9 +28,20 @@
 </ul>
 
 
+<h2>ピッキングルート</h2>
+<btton　type="button" class="btn btn-primary" @onclick=" () => CalculateGreedyRoute(_PickingItems)">最短経路</btton>
+<ul>
+	@foreach (var item in _optimalRoute)
+	{
+		<li>@item.ProductName</li>
+	}
+</ul>
+
+
 @code {
 	private List<ProductItem> _productItems = new();
 	private List<ProductItem> _PickingItems = new();
+	private List<ProductItem> _optimalRoute = new();
 
 	/// <summary>
 	/// 初期化処理
@@ -56,6 +67,43 @@
 		{
 			_PickingItems.Remove(item);
 		}
+	}
+
+	/// <summary>
+	/// 貪欲法を使用して、リスト内の商品を最短距離で並べ替えます。
+	/// </summary>
+	/// <param name="products"></param>
+	/// <returns></returns>
+	private void CalculateGreedyRoute(List<ProductItem> products)
+	{
+		_optimalRoute = new List<ProductItem>();
+		var remainingProducts = new List<ProductItem>(products);
+		var currentProduct = remainingProducts[0];
+
+		_optimalRoute.Add(currentProduct);
+		remainingProducts.RemoveAt(0);
+
+		while (remainingProducts.Any())
+		{
+			var nextProduct = remainingProducts
+				.OrderBy(p => GetDistance(currentProduct, p))
+				.First();
+			_optimalRoute.Add(nextProduct);
+			remainingProducts.Remove(nextProduct);
+			currentProduct = nextProduct;
+		}
+	}
+
+	/// <summary>
+	///  ユーグリッド距離を計算します。
+	///  2点をまっすぐ結んだ線の長さです。
+	/// </summary>
+	/// <param name="a"></param>
+	/// <param name="b"></param>
+	/// <returns></returns>
+	private double GetDistance(ProductItem a, ProductItem b)
+	{
+		return Math.Sqrt(Math.Pow(a.strangeLocationX - b.strangeLocationX, 2) + Math.Pow(a.strangeLocationY - b.strangeLocationY, 2));
 	}
 
 }
