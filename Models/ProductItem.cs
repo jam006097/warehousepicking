@@ -20,4 +20,13 @@ namespace PickingRoute.Models
 		[Required(ErrorMessage = "LocationY is required.")]
 		public int strangeLocationY { get; set; }
 	}
+
+	public class Shelf
+	{
+		public int Id { get; set; }
+		public string Name { get; set; }
+		public double X { get; set; }
+		public double Y { get; set; }
+	}
+
 }

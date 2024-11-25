@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\bootstrap\Svg\" />
+    <Folder Include="wwwroot\js\" />
   </ItemGroup>
 
 </Project>

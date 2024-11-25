@@ -1,0 +1,92 @@
+﻿@page "/warehouse"
+@using System.Collections.Generic
+@using Microsoft.AspNetCore.Components.Web
+@using PickingRoute.Models
+@inject IJSRuntime JSRuntime
+
+<h3>倉庫の配置図</h3>
+<svg width="800" height="600" style="border: 1px solid black;" @onclick="OnSvgClick">
+    @foreach (var shelf in Shelves)
+    {
+        <circle cx="@shelf.X" cy="@shelf.Y" r="10" fill="blue" @onmousedown="(e) => OnMouseDown(e, shelf)" />
+        <text>
+            <tspan x="@shelf.X" y="@shelf.Y + 15">@shelf.Name</tspan>
+        </text>
+    }
+</svg>
+
+@code {
+    private List<Shelf> Shelves = new List<Shelf>
+    {
+        new Shelf { Id = 1, Name = "Shelf A", X = 50, Y = 50 },
+        new Shelf { Id = 2, Name = "Shelf B", X = 150, Y = 100 },
+        new Shelf { Id = 3, Name = "Shelf C", X = 200, Y = 200 }
+    };
+
+    private bool isDragging = false;
+    private Shelf? currentShelf = null;
+
+    private void OnSvgClick(MouseEventArgs e)
+    {
+        if (!isDragging)
+        {
+            var newShelf = new Shelf
+            {
+                Id = Shelves.Count + 1,
+                Name = $"Shelf {Shelves.Count + 1}",
+                X = e.OffsetX,
+                Y = e.OffsetY
+            };
+            Shelves.Add(newShelf);
+        }
+    }
+
+    private void OnMouseDown(MouseEventArgs e, Shelf shelf)
+    {
+        isDragging = true;
+        currentShelf = shelf;
+    }
+
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        if (isDragging && currentShelf != null)
+        {
+            currentShelf.X = e.OffsetX;
+            currentShelf.Y = e.OffsetY;
+        }
+    }
+
+    private void OnMouseUp()
+    {
+        isDragging = false;
+        currentShelf = null;
+    }
+
+    protected override void OnInitialized()
+    {
+        DocumentEventListener("mousemove", OnMouseMove);
+        DocumentEventListener("mouseup", e => OnMouseUp());
+    }
+
+    private void DocumentEventListener(string eventName, Action<MouseEventArgs> action)
+    {
+        var dotNetObjectReference = DotNetObjectReference.Create(new EventCallbackHandler(action));
+        JSRuntime.InvokeVoidAsync("addDocumentEventListener", eventName, dotNetObjectReference);
+    }
+
+    private class EventCallbackHandler
+    {
+        private readonly Action<MouseEventArgs> _callback;
+
+        public EventCallbackHandler(Action<MouseEventArgs> callback)
+        {
+            _callback = callback;
+        }
+
+        [JSInvokable]
+        public void Invoke(MouseEventArgs e)
+        {
+            _callback(e);
+        }
+    }
+}

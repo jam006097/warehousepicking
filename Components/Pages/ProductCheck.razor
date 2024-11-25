@@ -29,7 +29,7 @@
 
 
 <h2>ピッキングルート</h2>
-<btton　type="button" class="btn btn-primary" @onclick=" () => CalculateGreedyRoute(_PickingItems)">最短経路</btton>
+<button　type="button" class="btn btn-primary" @onclick=" () => CalculateGreedyRoute(_PickingItems)">最短経路</button>
 <ul>
 	@foreach (var item in _optimalRoute)
 	{
@@ -37,6 +37,18 @@
 	}
 </ul>
 
+<h3>倉庫の配置図</h3>
+<svg width="800" height="600" style="border : 1px solid black;">
+	@foreach (var item in _optimalRoute)
+	{
+		<circle cx="@item.strangeLocationX" cy="@item.strangeLocationY" r="10" fill="blue" />
+		<foreignObject	x="@item.strangeLocationX" y="@item.strangeLocationY" width="100" height="20">
+			@item.ProductName
+		</foreignObject>
+
+
+	}
+</svg>
 
 @code {
 	private List<ProductItem> _productItems = new();
