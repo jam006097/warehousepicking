@@ -63,21 +63,36 @@
 		var item = _optimalRoute[i];
 		var nextItem = _optimalRoute[i + 1];
 
-			<!-- 商品間の矢印を描画-->
-			<line x1="@item.strangeLocationX" y1="@item.strangeLocationY" x2="@nextItem.strangeLocationX" y2="@nextItem.strangeLocationY" stroke="red" marker-end="url(#arrowhead)" />
+		<!-- 商品間の矢印を描画-->
+		<line x1="@item.strangeLocationX" y1="@item.strangeLocationY" x2="@nextItem.strangeLocationX" y2="@nextItem.strangeLocationY" stroke="red" marker-end="url(#arrowhead)" />
 	}
-		<!--矢印の定義-->
-		<defs>
-			<marker id="arrowhead" markerWidth="15" markerHeight="10" refX="10" refY="5" orient="auto">
-				<polygon points="0 0, 15 5, 0 10" fill="red" />
-			</marker>
-		</defs>
-	</svg>
+	<!--矢印の定義-->
+	<defs>
+		<marker id="arrowhead" markerWidth="15" markerHeight="10" refX="10" refY="5" orient="auto">
+			<polygon points="0 0, 15 5, 0 10" fill="red" />
+		</marker>
+	</defs>
+</svg>
+
+<h2>倉庫内の配置図</h2>
+<svg width="800" height="600" style="border: 1px solid black;"> 
+	@foreach (var shelf in _Shelves) 
+	{ 
+		<!-- 棚の位置を描画 -->
+		<rect x="@shelf.X" y="@shelf.Y" width="50" height="50" fill="lightgray" stroke="black" /> 
+		<foreignObject x="@(shelf.X + 5)" y="@(shelf.Y + 25)" width="25" height="20">
+			<body xmlns="http://www.w3.org/1999/xhtml">
+				<div style="font-size:12px; color:black;">@shelf.Name</div> 
+			</body>
+		</foreignObject>
+	}
+</svg>
 
 @code {
 	private List<ProductItem> _productItems = new();
 	private List<ProductItem> _PickingItems = new();
 	private List<ProductItem> _optimalRoute = new();
+	private List<Shelf> _Shelves = new();
 
 	/// <summary>
 	/// 初期化処理
@@ -87,6 +102,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		_productItems = await dbContext.ProductItems.ToListAsync();
+		_Shelves = await dbContext.Shelves.ToListAsync();
 	}
 
 	/// <summary>
