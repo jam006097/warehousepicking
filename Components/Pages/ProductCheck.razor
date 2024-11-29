@@ -38,7 +38,7 @@
 	}
 </ul>
 
-<h2>倉庫の配置図</h2>
+<h2>商品の配置図</h2>
 <svg width="800" height="600" style="border : 1px solid black;">
 	<!-- 商品の円とテキストを先に描画-->
 	@for (int i = 0; i < _optimalRoute.Count; i++)
@@ -75,11 +75,14 @@
 </svg>
 
 <h2>倉庫内の配置図</h2>
-<svg width="800" height="600" style="border: 1px solid black;"> 
+<!-- SVG 要素内でのマウスの動きを追跡 -->
+<!--onmousemove と onmouseup を svg タグに設定: SVG全体でマウスの動きを追跡し、確実にイベントをキャッチするため。-->
+<svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp">
 	@foreach (var shelf in _Shelves) 
 	{ 
 		<!-- 棚の位置を描画 -->
-		<rect x="@shelf.X" y="@shelf.Y" width="50" height="50" fill="lightgray" stroke="black" /> 
+		<!--onmousedown を rect タグに設定: ドラッグの開始点を正確に特定するため。-->
+		<rect x="@shelf.X" y="@shelf.Y" width="50" height="50" fill="lightgray" stroke="black" @onmousedown="(e) => OnMouseDown(e, shelf)" />
 		<foreignObject x="@(shelf.X + 5)" y="@(shelf.Y + 25)" width="25" height="20">
 			<body xmlns="http://www.w3.org/1999/xhtml">
 				<div style="font-size:12px; color:black;">@shelf.Name</div> 
@@ -92,7 +95,12 @@
 	private List<ProductItem> _productItems = new();
 	private List<ProductItem> _PickingItems = new();
 	private List<ProductItem> _optimalRoute = new();
+
 	private List<Shelf> _Shelves = new();
+	private Dictionary<int, ElementReference> shelfElements = new(); 
+	private Shelf? draggingShelf; // ドラッグ中の棚
+	private bool isDragging = false; // ドラッグ状態のフラグ
+	private double offsetX, offsetY;　// マウスと棚の位置のオフセット
 
 	/// <summary>
 	/// 初期化処理
@@ -156,6 +164,52 @@
 	private double GetDistance(ProductItem a, ProductItem b)
 	{
 		return Math.Sqrt(Math.Pow(a.strangeLocationX - b.strangeLocationX, 2) + Math.Pow(a.strangeLocationY - b.strangeLocationY, 2));
+	}
+
+	/// <summary> 
+	/// マウスダウンイベントハンドラ。対象の棚を特定し、ドラッグを開始する。
+	/// </summary> 
+	/// <param name="e"></param> 
+	/// <param name="shelf"></param>
+	private void OnMouseDown(MouseEventArgs e, Shelf shelf) 
+	{ 
+		draggingShelf = shelf; // ドラッグ中の棚をセット
+		isDragging = true;  // ドラッグ中フラグをセット
+		offsetX = e.ClientX - shelf.X; // マウスのX座標と棚のX座標の差を計算
+		offsetY = e.ClientY - shelf.Y; // マウスのY座標と棚のY座標の差を計算
+	}
+
+	/// <summary> 
+	/// マウスムーブイベントハンドラ。棚の位置を更新する。
+	/// </summary> 
+	/// <param name="e"></param>
+	private void OnMouseMove(MouseEventArgs e)
+	{
+		if (isDragging && draggingShelf != null)
+		{
+			draggingShelf.X = e.ClientX - offsetX; // 新しいX座標を計算
+			draggingShelf.Y = e.ClientY - offsetY; // 新しいY座標を計算
+			StateHasChanged(); // UIを更新する
+		}
+	}
+
+	/// <summary> 
+	/// マウスアップイベントハンドラ。ドラッグを終了し、新しい位置を保存する。 
+	/// </summary> /// <param name="e"></param>
+	private async void OnMouseUp(MouseEventArgs e)
+	{
+		if (isDragging && draggingShelf != null)
+		{
+			isDragging = false; // ドラッグ中フラグをリセット
+			var shelf = await dbContext.Shelves.FindAsync(draggingShelf.Id);
+			if (shelf != null)
+			{
+				shelf.X = draggingShelf.X; // 新しいX座標を保存
+				shelf.Y = draggingShelf.Y; // 新しいY座標を保存
+				await dbContext.SaveChangesAsync(); // データベースに保存
+			}
+			draggingShelf = null; // ドラッグ中の棚をリセット
+		}
 	}
 
 	}
