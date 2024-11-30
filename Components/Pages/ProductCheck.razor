@@ -82,14 +82,22 @@
 	{ 
 		<!-- 棚の位置を描画 -->
 		<!--onmousedown を rect タグに設定: ドラッグの開始点を正確に特定するため。-->
-		<rect x="@shelf.X" y="@shelf.Y" width="50" height="50" fill="lightgray" stroke="black" @onmousedown="(e) => OnMouseDown(e, shelf)" />
-		<foreignObject x="@(shelf.X + 5)" y="@(shelf.Y + 25)" width="25" height="20">
+		<rect x="@shelf.X" y="@shelf.Y" width="50" height="50" fill="lightgray" stroke="black" @onmousedown="(e) => OnShelfMouseDown(e, shelf)" />
+		<foreignObject x="@(shelf.X)" y="@(shelf.Y + 55)" width="150" height="30">
 			<body xmlns="http://www.w3.org/1999/xhtml">
-				<div style="font-size:12px; color:black;">@shelf.Name</div> 
+				<!-- 棚の名前を表示するテキストボックス。ダブルクリックで編集モードになる -->
+				<input type="text" @bind="shelf.Name" @ondblclick="@(e => EditShelfName(shelf))" style="width: 150px; border: none;"/>
 			</body>
 		</foreignObject>
 	}
 </svg>
+
+<h2>新しい棚を追加</h2> 
+<button @onclick="AddNewShelf">新しい棚を追加</button>
+@foreach (var shelf in _Shelves)
+{
+	<li>@shelf.Name </li>
+}
 
 @code {
 	private List<ProductItem> _productItems = new();
@@ -101,6 +109,11 @@
 	private Shelf? draggingShelf; // ドラッグ中の棚
 	private bool isDragging = false; // ドラッグ状態のフラグ
 	private double offsetX, offsetY;　// マウスと棚の位置のオフセット
+
+	private bool isAddingShelf = false; // 新しい棚を追加するフラグ
+	private Shelf? newShelf; // 新しい棚の情報を保持
+	private const double CenterX = 400; // 倉庫内配置図の中央のX座標
+	private const double CenterY = 300; // 倉庫内配置図の中央のY座標
 
 	/// <summary>
 	/// 初期化処理
@@ -171,8 +184,8 @@
 	/// </summary> 
 	/// <param name="e"></param> 
 	/// <param name="shelf"></param>
-	private void OnMouseDown(MouseEventArgs e, Shelf shelf) 
-	{ 
+	private void OnShelfMouseDown(MouseEventArgs e, Shelf shelf) 
+	{
 		draggingShelf = shelf; // ドラッグ中の棚をセット
 		isDragging = true;  // ドラッグ中フラグをセット
 		offsetX = e.ClientX - shelf.X; // マウスのX座標と棚のX座標の差を計算
@@ -212,4 +225,29 @@
 		}
 	}
 
+
+	/// <summary> 
+	///  新しい棚を追加するメソッド 
+	///  </summary> 
+	private async void AddNewShelf() 
+	{ 
+		newShelf = new Shelf { Name = "新しい棚", X = CenterX, Y = CenterY }; // 初期位置を中央に設定 
+		_Shelves.Add(newShelf); // ローカルリストに追加 
+		dbContext.Shelves.Add(newShelf); // データベースに追加 
+		await dbContext.SaveChangesAsync(); // データベースに保存 
+		isAddingShelf = false; // フラグをリセット 
+		newShelf = null; // 新しい棚の情報をクリア 
+		StateHasChanged(); // UIを更新 
 	}
+
+	/// <summary>
+	/// 棚の名前を編集モードに切り替えるメソッド。 
+	/// </summary> 
+	/// <param name="shelf"></param> 
+	private void EditShelfName(Shelf shelf) 
+	{
+		shelf.Name = ""; // 空にしてユーザーが新しい名前を入力できるようにする 
+		StateHasChanged(); // UIを更新する 
+	}
+
+}
