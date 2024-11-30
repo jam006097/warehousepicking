@@ -80,20 +80,25 @@
 <svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp">
 	@foreach (var shelf in _Shelves) 
 	{ 
-		<!-- 棚の位置を描画 -->
+		<!-- 棚の位置とサイズを描画 -->
 		<!--onmousedown を rect タグに設定: ドラッグの開始点を正確に特定するため。-->
-		<rect x="@shelf.X" y="@shelf.Y" width="50" height="50" fill="lightgray" stroke="black" @onmousedown="(e) => OnShelfMouseDown(e, shelf)" />
-		<foreignObject x="@(shelf.X)" y="@(shelf.Y + 55)" width="150" height="30">
-			<body xmlns="http://www.w3.org/1999/xhtml">
+		<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" fill="lightgray" stroke="black" @onmousedown="@(e => OnShelfMouseDown(e, shelf))" />
+
+		<foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30">
+			<body xmlns="http://www.w3.org/1999/xhtml" style="background-color: transparent;" >
 				<!-- 棚の名前を表示するテキストボックス。ダブルクリックで編集モードになる -->
-				<input type="text" @bind="shelf.Name" @ondblclick="@(e => EditShelfName(shelf))" style="width: 150px; border: none;"/>
+				<input type="text" id="shelf-@shelf.Id" @bind="shelf.Name" class="form-control-plaintext" style="background-color: transparent; width: auto; min-width: 50px; max-width: 400px; padding: 2px; border: none;" size="@Math.Max(1, shelf.Name.Length)" autocomplete="off" />
 			</body>
 		</foreignObject>
+
+		<!-- リサイズハンドルを描画 --> 
+		<polygon points="@(shelf.X + shelf.Width - 10),@(shelf.Y + shelf.Height) @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height - 10) @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height)" fill="rgba(0,0,0,0.5)" cursor="nwse-resize" @onmousedown="@(e => OnResizeHandleMouseDown(e, shelf))" style="pointer-events: all;" />
+
 	}
 </svg>
 
 <h2>新しい棚を追加</h2> 
-<button @onclick="AddNewShelf">新しい棚を追加</button>
+<button class="btn btn-primary" @onclick="AddNewShelf">新しい棚を追加</button>
 @foreach (var shelf in _Shelves)
 {
 	<li>@shelf.Name </li>
@@ -114,6 +119,8 @@
 	private Shelf? newShelf; // 新しい棚の情報を保持
 	private const double CenterX = 400; // 倉庫内配置図の中央のX座標
 	private const double CenterY = 300; // 倉庫内配置図の中央のY座標
+
+	private Shelf? resizingShelf; // リサイズ中の棚
 
 	/// <summary>
 	/// 初期化処理
@@ -194,15 +201,24 @@
 
 	/// <summary> 
 	/// マウスムーブイベントハンドラ。棚の位置を更新する。
-	/// </summary> 
+	/// </summary>
 	/// <param name="e"></param>
 	private void OnMouseMove(MouseEventArgs e)
 	{
-		if (isDragging && draggingShelf != null)
+		if (isDragging)
 		{
-			draggingShelf.X = e.ClientX - offsetX; // 新しいX座標を計算
-			draggingShelf.Y = e.ClientY - offsetY; // 新しいY座標を計算
-			StateHasChanged(); // UIを更新する
+			if (draggingShelf != null)
+			{
+				draggingShelf.X = e.ClientX - offsetX; // 新しいX座標を計算
+				draggingShelf.Y = e.ClientY - offsetY; // 新しいY座標を計算
+				StateHasChanged(); // UIを更新する
+			}
+			else if (resizingShelf != null)
+			{
+				resizingShelf.Width = Math.Max(10, e.ClientX - resizingShelf.X - offsetX); // 新しい幅を計算
+				resizingShelf.Height = Math.Max(10, e.ClientY - resizingShelf.Y - offsetY); // 新しい高さを計算
+				StateHasChanged(); // UIを更新する
+			}
 		}
 	}
 
@@ -211,17 +227,31 @@
 	/// </summary> /// <param name="e"></param>
 	private async void OnMouseUp(MouseEventArgs e)
 	{
-		if (isDragging && draggingShelf != null)
+		if (isDragging)
 		{
 			isDragging = false; // ドラッグ中フラグをリセット
-			var shelf = await dbContext.Shelves.FindAsync(draggingShelf.Id);
-			if (shelf != null)
+			if (draggingShelf != null)
 			{
-				shelf.X = draggingShelf.X; // 新しいX座標を保存
-				shelf.Y = draggingShelf.Y; // 新しいY座標を保存
-				await dbContext.SaveChangesAsync(); // データベースに保存
+				var shelf = await dbContext.Shelves.FindAsync(draggingShelf.Id);
+				if (shelf != null)
+				{
+					shelf.X = draggingShelf.X; // 新しいX座標を保存
+					shelf.Y = draggingShelf.Y; // 新しいY座標を保存
+					await dbContext.SaveChangesAsync(); // データベースに保存
+				}
+				draggingShelf = null; // ドラッグ中の棚をリセット
 			}
-			draggingShelf = null; // ドラッグ中の棚をリセット
+			else if (resizingShelf != null)
+			{
+				var shelf = await dbContext.Shelves.FindAsync(resizingShelf.Id);
+				if (shelf != null)
+				{
+					shelf.Width = resizingShelf.Width; // 新しい幅を保存
+					shelf.Height = resizingShelf.Height; // 新しい高さを保存
+					await dbContext.SaveChangesAsync(); // データベースに保存
+				}
+				resizingShelf = null; // リサイズ中の棚をリセット
+			}
 		}
 	}
 
@@ -249,5 +279,19 @@
 		shelf.Name = ""; // 空にしてユーザーが新しい名前を入力できるようにする 
 		StateHasChanged(); // UIを更新する 
 	}
+
+	/// <summary> 
+	/// リサイズハンドルのマウスダウンイベントハンドラ。リサイズを開始する。
+	///  </summary>
+	///  <param name="e"></param>
+	///  <param name="shelf"></param> 
+	private void OnResizeHandleMouseDown(MouseEventArgs e, Shelf shelf) 
+	{ 
+		resizingShelf = shelf; // リサイズ中の棚をセット 
+		isDragging = true; // ドラッグ中フラグをセット 
+		offsetX = e.ClientX - (shelf.X + shelf.Width); // マウスのX座標と棚の右端の差を計算
+		offsetY = e.ClientY - (shelf.Y + shelf.Height); // マウスのY座標と棚の下端の差を計算
+	}
+
 
 }

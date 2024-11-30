@@ -24,9 +24,12 @@ namespace PickingRoute.Models
 	public class Shelf
 	{
 		public int Id { get; set; }
-		public string Name { get; set; }
+		public string Name { get; set; } = string.Empty;
 		public double X { get; set; }
 		public double Y { get; set; }
+		public double Width { get; set; } = 50; // デフォルトの幅を設定
+		public double Height { get; set; } = 50; // デフォルトの高さを設定
+
 	}
 
 }
