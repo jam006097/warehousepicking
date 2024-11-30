@@ -30,8 +30,7 @@
 			{
 				<!--表示、編集ボタン-->
 				<div class="d-inline-block me-3">@item.ProductName</div>
-				<div class="d-inline-block me-3">@item.strangeLocationX</div>
-				<div class="d-inline-block me-3">@item.strangeLocationY</div>
+				<div class="d-inline-block me-3">@item.Shelf.Name</div>
 				<button @onclick="() => EnterEditMode(item)" class="btn btn-sm btn-primary me-2">Edit</button>
 			}
 
@@ -46,10 +45,14 @@
 <ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" ButtonText="Add" />
 
 @code {
+	// 商品リスト
 	private List<ProductItem> _productItems = new();
+	// 新規追加する商品
 	private ProductItem _newProductItem = new ProductItem();
+	// 編集中の商品
 	private ProductItem? _editingProductItem;
 
+	// 処理結果のメッセージ
 	private string? _latestMessage;
 	private bool _isLatestMessageSuccess;
 
@@ -80,8 +83,8 @@
 			{
 				ProductId = productItem.ProductId,
 				ProductName = productItem.ProductName,
-				strangeLocationX = productItem.strangeLocationX,
-				strangeLocationY = productItem.strangeLocationY
+				ShelfId = productItem.ShelfId, 
+				Shelf = productItem.Shelf
 			};
 	}
 
@@ -136,9 +139,10 @@
 		catch (ProductListServiceException ex)
 		{
 			SetUserMessage($"Error adding product: {ex.Message}", false);
-	}
+		}
 	}
 
+	// 処理結果のメッセージを設定
 	private void SetUserMessage(string message, bool isSuccess)
 	{
 		_latestMessage = message + " " + DateTime.Now.ToString("HH:mm:ss");

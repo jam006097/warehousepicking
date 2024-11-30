@@ -44,11 +44,12 @@
 	@for (int i = 0; i < _optimalRoute.Count; i++)
 	{
 		var item = _optimalRoute[i];
-		var textx = item.strangeLocationX + 10;
-		var texty = item.strangeLocationY - 10;
+		var shelf = item.Shelf; 
+		var textx = shelf.X + 10; 
+		var texty = shelf.Y - 10;
 
 		<!--商品の円を描画-->
-		<circle cx="@item.strangeLocationX" cy="@item.strangeLocationY" r="10" fill="blue" />
+		<circle cx="@shelf.X" cy="@shelf.Y" r="10" fill="blue" />
 
 		<!--商品名を描画-->
 		<foreignObject x="@textx" y="@texty" width="200" height="20">
@@ -62,9 +63,11 @@
 	{
 		var item = _optimalRoute[i];
 		var nextItem = _optimalRoute[i + 1];
+		var currentShelf = item.Shelf; 
+		var nextShelf = nextItem.Shelf;
 
 		<!-- 商品間の矢印を描画-->
-		<line x1="@item.strangeLocationX" y1="@item.strangeLocationY" x2="@nextItem.strangeLocationX" y2="@nextItem.strangeLocationY" stroke="red" marker-end="url(#arrowhead)" />
+		<line x1="@currentShelf.X" y1="@currentShelf.Y" x2="@nextShelf.X" y2="@nextShelf.Y" stroke="red" marker-end="url(#arrowhead)" />
 	}
 	<!--矢印の定義-->
 	<defs>
@@ -183,7 +186,7 @@
 	/// <returns></returns>
 	private double GetDistance(ProductItem a, ProductItem b)
 	{
-		return Math.Sqrt(Math.Pow(a.strangeLocationX - b.strangeLocationX, 2) + Math.Pow(a.strangeLocationY - b.strangeLocationY, 2));
+		return Math.Sqrt(Math.Pow(a.Shelf.X - b.Shelf.X, 2) + Math.Pow(a.Shelf.Y - b.Shelf.Y, 2));
 	}
 
 	/// <summary> 

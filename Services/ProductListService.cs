@@ -19,8 +19,9 @@ namespace PickingRoute.Services
 		{
 			// 関数を実行し、エラーなら例外を投げます
 			return await ExecuteWithExceptionHandlingAsync(
-				async () => await _context.ProductItems.ToListAsync(), // ラムダ式で関数を渡します。
-				"Failed to retrieve product items.");　// 例外時のエラーメッセージ
+				async () => await _context.ProductItems.Include(p => p.Shelf).ToListAsync(), // ラムダ式で関数を渡します。
+				"Failed to retrieve product items."
+			);　// 例外時のエラーメッセージ
 
 		}
 
@@ -34,11 +35,11 @@ namespace PickingRoute.Services
 				{
 					var existingProductItem = await GetProductItemAsyncFromID(productItemInput.ProductId);
 					existingProductItem.ProductName = productItemInput.ProductName;
-					existingProductItem.strangeLocationX = productItemInput.strangeLocationX;
-					existingProductItem.strangeLocationY = productItemInput.strangeLocationY;
+					existingProductItem.ShelfId = productItemInput.ShelfId;
 					await _context.SaveChangesAsync();
 				},
-				"Failed to Update product item."); // 例外時のエラーメッセージ
+				"Failed to Update product item."
+			); // 例外時のエラーメッセージ
 		}
 
 		// 商品の削除
@@ -53,7 +54,8 @@ namespace PickingRoute.Services
 					_context.ProductItems.Remove(existingProductItem);
 					await _context.SaveChangesAsync();
 				},
-				"Failed to delete product item."); //例外時のエラーメッセージ
+				"Failed to delete product item."
+			); //例外時のエラーメッセージ
 		}
 
 		// 商品の追加
@@ -68,14 +70,15 @@ namespace PickingRoute.Services
 					_context.ProductItems.Add(newProductItem);
 					await _context.SaveChangesAsync();
 				},
-				"Failed to add product item."); //例外時のエラーメッセージ
+				"Failed to add product item."
+			); //例外時のエラーメッセージ
 		}
 
 		// productIDから商品一覧を取得します
 		// 例外が発生した場合、カスタム例外をスローします。
 		private async Task<ProductItem> GetProductItemAsyncFromID(int productId)
 		{
-			var productItem = await _context.ProductItems.FindAsync(productId);
+			var productItem = await _context.ProductItems.Include(p => p.Shelf).FirstOrDefaultAsync(p => p.ProductId == productId);
 			// 商品一覧を取得出来なかった場合、カスタム例外をスローします
 			if (productItem == null) 
 			{

@@ -220,13 +220,12 @@ namespace PickingRoute.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("strangeLocationX")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("strangeLocationY")
+                    b.Property<int>("ShelfId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ProductId");
+
+                    b.HasIndex("ShelfId");
 
                     b.ToTable("ProductItems");
                 });
@@ -307,6 +306,22 @@ namespace PickingRoute.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PickingRoute.Models.ProductItem", b =>
+                {
+                    b.HasOne("PickingRoute.Models.Shelf", "Shelf")
+                        .WithMany("ProductItems")
+                        .HasForeignKey("ShelfId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shelf");
+                });
+
+            modelBuilder.Entity("PickingRoute.Models.Shelf", b =>
+                {
+                    b.Navigation("ProductItems");
                 });
 #pragma warning restore 612, 618
         }

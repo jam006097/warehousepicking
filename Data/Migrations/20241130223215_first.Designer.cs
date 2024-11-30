@@ -11,8 +11,8 @@ using PickingRoute.Data;
 namespace PickingRoute.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241117040505_product")]
-    partial class product
+    [Migration("20241130223215_first")]
+    partial class first
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -223,15 +223,41 @@ namespace PickingRoute.Data.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("strangeLocationX")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("strangeLocationY")
+                    b.Property<int>("ShelfId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ProductId");
 
+                    b.HasIndex("ShelfId");
+
                     b.ToTable("ProductItems");
+                });
+
+            modelBuilder.Entity("PickingRoute.Models.Shelf", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Height")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Width")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("X")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Y")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Shelves");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -283,6 +309,22 @@ namespace PickingRoute.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PickingRoute.Models.ProductItem", b =>
+                {
+                    b.HasOne("PickingRoute.Models.Shelf", "Shelf")
+                        .WithMany("ProductItems")
+                        .HasForeignKey("ShelfId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shelf");
+                });
+
+            modelBuilder.Entity("PickingRoute.Models.Shelf", b =>
+                {
+                    b.Navigation("ProductItems");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,26 +1,49 @@
 ﻿@using PickingRoute.Models
+@using Microsoft.EntityFrameworkCore
+@using PickingRoute.Data
+@inject ApplicationDbContext dbContext
 
+<!-- 商品の編集および追加フォーム -->
 <EditForm Model="@ProductItem" OnValidSubmit="OnSubmit" style="display: inline">
-
+	<!-- データ注釈バリデータ -->
 	<DataAnnotationsValidator />
 
+	<!-- 商品名の入力フィールド -->
 	<InputText @bind-Value="ProductItem.ProductName" placeholder="Product Name" />
 	<ValidationMessage For="@(() => ProductItem.ProductName)" style="display: inline"/>
 
-	<InputNumber @bind-Value="ProductItem.strangeLocationX" placeholder="Location X" />
-	<ValidationMessage For="@(() => ProductItem.strangeLocationX)" style="display: inline" />
+	<!-- 棚の選択フィールド -->
+	<InputSelect @bind-Value="ProductItem.ShelfId">
+		<option value="">Select Shelf</option>
+		@foreach (var shelf in Shelves)
+		{
+			<option value="@shelf.Id">@shelf.Name</option>
+		}
+	</InputSelect>
+	<ValidationMessage For="@(() => ProductItem.ShelfId)" style="display: inline" />
 
-	<ValidationMessage For="@(() => ProductItem.strangeLocationY)" style="display: inline" />
-	<InputNumber @bind-Value="ProductItem.strangeLocationY" placeholder="Location Y"/>
-
+	<!-- 送信ボタン -->
 	<button type="submit" class="btn btn-sm btn-primary me-2">@ButtonText</button>
 
 </EditForm>
 
 @code {
 
+	// 商品アイテムのデータバインド
 	[Parameter] public ProductItem ProductItem { get; set; } = new ProductItem();
+	// ボタンテキストのデータバインド
 	[Parameter] public string ButtonText { get; set; } = "Submit";
+	// プレースホルダーのデータバインド
 	[Parameter] public string Placeholder { get; set; } = "";
+	// フォーム送信時のデリゲート
 	[Parameter] public Func<Task> OnSubmit { get; set; } = () => Task.CompletedTask;
+
+	// 棚のリスト
+	private List<Shelf> Shelves = new List<Shelf>(); 
+
+	// コンポーネントの初期化時に棚のリストを取得
+	protected override async Task OnInitializedAsync() 
+	{ 
+		Shelves = await dbContext.Shelves.ToListAsync(); 
+	}
 }

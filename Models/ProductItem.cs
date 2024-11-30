@@ -12,13 +12,12 @@ namespace PickingRoute.Models
 		[StringLength(10, ErrorMessage = "ProductName must be less than 10 characters.")]
 		public string ProductName { get; set; } = string.Empty;
 
-		// X座標
-		[Required(ErrorMessage = "LocationX is required.")]
-		public int strangeLocationX { get; set; }
+		//　棚のID
+		[Required(ErrorMessage = "ShelfId is required.")]
+		public int ShelfId { get; set; }
 
-		// Y座標
-		[Required(ErrorMessage = "LocationY is required.")]
-		public int strangeLocationY { get; set; }
+		// 棚への参照
+		public virtual Shelf Shelf { get; set; }
 	}
 
 	public class Shelf
@@ -29,6 +28,9 @@ namespace PickingRoute.Models
 		public double Y { get; set; }
 		public double Width { get; set; } = 50; // デフォルトの幅を設定
 		public double Height { get; set; } = 50; // デフォルトの高さを設定
+
+		// 商品リスト
+		public virtual ICollection<ProductItem> ProductItems { get; set; }
 
 	}
 
