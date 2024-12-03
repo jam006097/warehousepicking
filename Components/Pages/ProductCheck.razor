@@ -81,6 +81,15 @@
 <!-- SVG 要素内でのマウスの動きを追跡 -->
 <!--onmousemove と onmouseup を svg タグに設定: SVG全体でマウスの動きを追跡し、確実にイベントをキャッチするため。-->
 <svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp">
+
+	<!-- 背面に描画するために通路を先に描画 -->
+    @foreach (var path in _Paths)
+    {
+		<line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" stroke="lightgray" stroke-width="10" @onmousedown="@(e => OnPathMouseDown(e, path))" />
+        <circle cx="@path.StartX" cy="@path.StartY" r="5" fill="blue" @onmousedown="@(e => OnPathStartMouseDown(e, path))" />
+        <circle cx="@path.EndX" cy="@path.EndY" r="5" fill="red" @onmousedown="@(e => OnPathEndMouseDown(e, path))" />
+    }
+
 	@foreach (var shelf in _Shelves) 
 	{ 
 		<!-- 棚の位置とサイズを描画 -->
@@ -90,7 +99,7 @@
 		<foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30">
 			<body xmlns="http://www.w3.org/1999/xhtml" style="background-color: transparent;" >
 				<!-- 棚の名前を表示するテキストボックス。ダブルクリックで編集モードになる -->
-				<input type="text" id="shelf-@shelf.Id" @bind="shelf.Name" class="form-control-plaintext" style="background-color: transparent; width: auto; min-width: 50px; max-width: 400px; padding: 2px; border: none;" size="@Math.Max(1, shelf.Name.Length)" autocomplete="off" />
+				<input type="text" id="shelf-@shelf.Id" @bind="shelf.Name" @onblur="@(async e => await OnShelfNameChanged(shelf))" class="form-control-plaintext" style="background-color: transparent; width: auto; min-width: 50px; max-width: 400px; padding: 2px; border: none;" size="@Math.Max(1, shelf.Name.Length)" autocomplete="off" />
 			</body>
 		</foreignObject>
 
@@ -106,6 +115,9 @@
 {
 	<li>@shelf.Name </li>
 }
+
+<h2>新しい通路を追加</h2> 
+<button class="btn btn-primary" @onclick="AddNewPath">新しい通路を追加</button>
 
 @code {
 	private List<ProductItem> _productItems = new();
@@ -125,6 +137,15 @@
 
 	private Shelf? resizingShelf; // リサイズ中の棚
 
+	private List<WarehousePath> _Paths = new();  // 通路のリストを初期化
+	private WarehousePath? newPath; // 追加: 新しい通路の情報を保持
+	private bool isDraggingPath = false; // ドラッグ状態のフラグ
+	private WarehousePath? draggingPath; // ドラッグ中の通路
+	private bool isDraggingStartPoint = false; // 始点をドラッグ中のフラグ
+	private bool isDraggingEntirePath = false; // 通路全体をドラッグ中のフラグ
+	private double initialMouseX, initialMouseY; // 初期マウス位置
+
+
 	/// <summary>
 	/// 初期化処理
 	/// 商品一覧を取得する
@@ -134,6 +155,7 @@
 	{
 		_productItems = await dbContext.ProductItems.ToListAsync();
 		_Shelves = await dbContext.Shelves.ToListAsync();
+		_Paths = await dbContext.Paths.ToListAsync();
 	}
 
 	/// <summary>
@@ -203,7 +225,7 @@
 	}
 
 	/// <summary> 
-	/// マウスムーブイベントハンドラ。棚の位置を更新する。
+	/// マウスムーブイベントハンドラ。通路や棚の位置を更新する。
 	/// </summary>
 	/// <param name="e"></param>
 	private void OnMouseMove(MouseEventArgs e)
@@ -222,11 +244,40 @@
 				resizingShelf.Height = Math.Max(10, e.ClientY - resizingShelf.Y - offsetY); // 新しい高さを計算
 				StateHasChanged(); // UIを更新する
 			}
+			else if (isDraggingEntirePath && draggingPath != null)
+			{
+				double deltaX = e.ClientX - initialMouseX;
+				double deltaY = e.ClientY - initialMouseY;
+
+				draggingPath.StartX += deltaX;
+				draggingPath.StartY += deltaY;
+				draggingPath.EndX += deltaX;
+				draggingPath.EndY += deltaY;
+
+				initialMouseX = e.ClientX;
+				initialMouseY = e.ClientY;
+
+				StateHasChanged();
+			}
+			else if (draggingPath != null)
+			{
+				if (isDraggingStartPoint)
+				{
+					draggingPath.StartX = e.ClientX - offsetX;
+					draggingPath.StartY = e.ClientY - offsetY;
+				}
+				else
+				{
+					draggingPath.EndX = e.ClientX - offsetX;
+					draggingPath.EndY = e.ClientY - offsetY;
+				}
+				StateHasChanged();
+			}
 		}
 	}
 
 	/// <summary> 
-	/// マウスアップイベントハンドラ。ドラッグを終了し、新しい位置を保存する。 
+	/// マウスアップイベントハンドラ。ドラッグやリサイズを終了し、データベースに保存する。 
 	/// </summary> /// <param name="e"></param>
 	private async void OnMouseUp(MouseEventArgs e)
 	{
@@ -254,6 +305,33 @@
 					await dbContext.SaveChangesAsync(); // データベースに保存
 				}
 				resizingShelf = null; // リサイズ中の棚をリセット
+			}
+			else if (isDraggingEntirePath && draggingPath != null)
+			{
+				var path = await dbContext.Paths.FindAsync(draggingPath.Id);
+				if (path != null)
+				{
+					path.StartX = draggingPath.StartX;
+					path.StartY = draggingPath.StartY;
+					path.EndX = draggingPath.EndX;
+					path.EndY = draggingPath.EndY;
+					await dbContext.SaveChangesAsync();
+				}
+				draggingPath = null;
+				isDraggingEntirePath = false;
+			}
+			else if (draggingPath != null)
+			{
+				var path = await dbContext.Paths.FindAsync(draggingPath.Id);
+				if (path != null)
+				{
+					path.StartX = draggingPath.StartX;
+					path.StartY = draggingPath.StartY;
+					path.EndX = draggingPath.EndX;
+					path.EndY = draggingPath.EndY;
+					await dbContext.SaveChangesAsync();
+				}
+				draggingPath = null;
 			}
 		}
 	}
@@ -283,6 +361,21 @@
 		StateHasChanged(); // UIを更新する 
 	}
 
+	private async Task SaveShelfName(Shelf shelf) 
+	{ 
+		var dbShelf = await dbContext.Shelves.FindAsync(shelf.Id); 
+		if (dbShelf != null) 
+		{ 
+			dbShelf.Name = shelf.Name; await dbContext.SaveChangesAsync(); 
+		} 
+	}
+
+	private async Task OnShelfNameChanged(Shelf shelf) 
+	{ 
+		await SaveShelfName(shelf); 
+		StateHasChanged(); 
+	}
+
 	/// <summary> 
 	/// リサイズハンドルのマウスダウンイベントハンドラ。リサイズを開始する。
 	///  </summary>
@@ -296,5 +389,59 @@
 		offsetY = e.ClientY - (shelf.Y + shelf.Height); // マウスのY座標と棚の下端の差を計算
 	}
 
+	/// <summary>
+	/// 新しい通路を追加するメソッド
+	/// </summary>
+	private async void AddNewPath()
+	{
+		newPath = new WarehousePath { StartX = 100, StartY = 100, EndX = 200, EndY = 100 }; // 初期位置を設定
+		_Paths.Add(newPath); // ローカルリストに追加
+		dbContext.Paths.Add(newPath); // データベースに追加
+		await dbContext.SaveChangesAsync(); // データベースに保存
+		newPath = null; // 新しい通路の情報をクリア
+		StateHasChanged(); // UIを更新
+	}
 
-}
+	/// <summary>
+	/// 通路の始点のドラッグ開始イベントハンドラ。
+	/// </summary>
+	/// <param name="e"></param>
+	/// <param name="path"></param>
+	private void OnPathStartMouseDown(MouseEventArgs e, WarehousePath path)
+	{
+		draggingPath = path;
+		isDragging = true;
+		isDraggingStartPoint = true;
+		offsetX = e.ClientX - path.StartX;
+		offsetY = e.ClientY - path.StartY;
+	}
+
+	/// <summary>
+	/// 通路の終点のドラッグ開始イベントハンドラ。
+	/// </summary>
+	/// <param name="e"></param>
+	/// <param name="path"></param>
+	private void OnPathEndMouseDown(MouseEventArgs e, WarehousePath path)
+	{
+		draggingPath = path;
+		isDragging = true;
+		isDraggingStartPoint = false;
+		offsetX = e.ClientX - path.EndX;
+		offsetY = e.ClientY - path.EndY;
+	}
+
+	/// <summary>
+	/// 通路全体のドラッグ開始イベントハンドラ。
+	/// </summary>
+	/// <param name="e"></param>
+	/// <param name="path"></param>
+	private void OnPathMouseDown(MouseEventArgs e, WarehousePath path)
+	{
+		draggingPath = path;
+		isDragging = true;
+		isDraggingEntirePath = true;
+		initialMouseX = e.ClientX;
+		initialMouseY = e.ClientY;
+	}
+
+	}

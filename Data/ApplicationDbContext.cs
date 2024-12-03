@@ -8,5 +8,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
 	public DbSet<ProductItem> ProductItems { get; set; }
 	public DbSet<Shelf> Shelves { get; set; }
+	public DbSet<WarehousePath> Paths { get; set; }
+
 
 }

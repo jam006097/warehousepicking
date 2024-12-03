@@ -2,6 +2,9 @@
 
 namespace PickingRoute.Models
 {
+	/// <summary>
+	/// 商品のプロパティ
+	/// </summary>
 	public class ProductItem
 	{
 		[Key]
@@ -20,6 +23,9 @@ namespace PickingRoute.Models
 		public virtual Shelf Shelf { get; set; }
 	}
 
+	/// <summary>
+	/// 倉庫のプロパティ
+	/// </summary>
 	public class Shelf
 	{
 		public int Id { get; set; }
@@ -32,6 +38,18 @@ namespace PickingRoute.Models
 		// 商品リスト
 		public virtual ICollection<ProductItem> ProductItems { get; set; }
 
+	}
+
+	/// <summary>
+	/// 通路のプロパティ
+	/// </summary>
+	public class WarehousePath
+	{
+		public int Id { get; set; }
+		public double StartX { get; set; }
+		public double StartY { get; set; }
+		public double EndX { get; set; }
+		public double EndY { get; set; }
 	}
 
 }
