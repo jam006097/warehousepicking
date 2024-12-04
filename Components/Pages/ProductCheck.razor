@@ -80,21 +80,21 @@
 <h2>倉庫内の配置図</h2>
 <!-- SVG 要素内でのマウスの動きを追跡 -->
 <!--onmousemove と onmouseup を svg タグに設定: SVG全体でマウスの動きを追跡し、確実にイベントをキャッチするため。-->
-<svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp">
+<svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onkeydown="OnKeyDown" tabindex="0">
 
 	<!-- 背面に描画するために通路を先に描画 -->
-    @foreach (var path in _Paths)
-    {
+	@foreach (var path in _Paths)
+	{
 		<line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" stroke="lightgray" stroke-width="10" @onmousedown="@(e => OnPathMouseDown(e, path))" />
-        <circle cx="@path.StartX" cy="@path.StartY" r="5" fill="blue" @onmousedown="@(e => OnPathStartMouseDown(e, path))" />
-        <circle cx="@path.EndX" cy="@path.EndY" r="5" fill="red" @onmousedown="@(e => OnPathEndMouseDown(e, path))" />
-    }
+		<circle cx="@path.StartX" cy="@path.StartY" r="5" fill="blue" @onmousedown="@(e => OnPathStartMouseDown(e, path))" />
+		<circle cx="@path.EndX" cy="@path.EndY" r="5" fill="red" @onmousedown="@(e => OnPathEndMouseDown(e, path))" />
+	}
 
 	@foreach (var shelf in _Shelves) 
 	{ 
 		<!-- 棚の位置とサイズを描画 -->
 		<!--onmousedown を rect タグに設定: ドラッグの開始点を正確に特定するため。-->
-		<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" fill="lightgray" stroke="black" @onmousedown="@(e => OnShelfMouseDown(e, shelf))" />
+		<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" fill="@(shelf == selectedShelf ? "lightblue" : "lightgray")" stroke="black" @onmousedown="@(e => OnShelfMouseDown(e, shelf))" @onclick="@(e => OnShelfClick(shelf))"/>
 
 		<foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30">
 			<body xmlns="http://www.w3.org/1999/xhtml" style="background-color: transparent;" >
@@ -134,8 +134,8 @@
 	private Shelf? newShelf; // 新しい棚の情報を保持
 	private const double CenterX = 400; // 倉庫内配置図の中央のX座標
 	private const double CenterY = 300; // 倉庫内配置図の中央のY座標
-
 	private Shelf? resizingShelf; // リサイズ中の棚
+	private Shelf? selectedShelf;	// 現在選択されている棚を保持する変数
 
 	private List<WarehousePath> _Paths = new();  // 通路のリストを初期化
 	private WarehousePath? newPath; // 追加: 新しい通路の情報を保持
@@ -444,4 +444,29 @@
 		initialMouseY = e.ClientY;
 	}
 
+	// 棚をクリックした時に選択状態にするメソッド
+	private void OnShelfClick(Shelf shelf)
+	{
+		selectedShelf = shelf;
+		StateHasChanged();
+	}
+
+	// キーボードのキー押下イベントを処理するメソッド
+	private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if ((e.Key == "Delete" || e.Key == "Backspace" )&& selectedShelf != null)
+        {
+            RemoveShelf(selectedShelf);
+        }
+    }
+
+	// 棚を削除するメソッド
+	private void RemoveShelf(Shelf shelf)
+	{
+		_Shelves.Remove(shelf);
+		dbContext.Shelves.Remove(shelf);
+		dbContext.SaveChangesAsync();
+		selectedShelf = null;
+		StateHasChanged();
+	}
 	}
