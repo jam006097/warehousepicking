@@ -80,12 +80,12 @@
 <h2>倉庫内の配置図</h2>
 <!-- SVG 要素内でのマウスの動きを追跡 -->
 <!--onmousemove と onmouseup を svg タグに設定: SVG全体でマウスの動きを追跡し、確実にイベントをキャッチするため。-->
-<svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onkeydown="OnKeyDown" tabindex="0">
+<svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onkeydown="HandleKeyDown" tabindex="0">
 
 	<!-- 背面に描画するために通路を先に描画 -->
 	@foreach (var path in _Paths)
 	{
-		<line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" stroke="lightgray" stroke-width="10" @onmousedown="@(e => OnPathMouseDown(e, path))" />
+		<line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" stroke="@((path == selectedPath) ? "lightblue" : "lightgray")" stroke-width="10" @onmousedown="@(e => OnPathMouseDown(e, path))" @onclick="@(e => SelectPath(path))"/>
 		<circle cx="@path.StartX" cy="@path.StartY" r="5" fill="blue" @onmousedown="@(e => OnPathStartMouseDown(e, path))" />
 		<circle cx="@path.EndX" cy="@path.EndY" r="5" fill="red" @onmousedown="@(e => OnPathEndMouseDown(e, path))" />
 	}
@@ -94,7 +94,7 @@
 	{ 
 		<!-- 棚の位置とサイズを描画 -->
 		<!--onmousedown を rect タグに設定: ドラッグの開始点を正確に特定するため。-->
-		<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" fill="@(shelf == selectedShelf ? "lightblue" : "lightgray")" stroke="black" @onmousedown="@(e => OnShelfMouseDown(e, shelf))" @onclick="@(e => OnShelfClick(shelf))"/>
+		<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" fill="@(shelf == selectedShelf ? "lightblue" : "lightgray")" stroke="black" @onmousedown="@(e => OnShelfMouseDown(e, shelf))" @onclick="@(e => SelectShelf(shelf))"/>
 
 		<foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30">
 			<body xmlns="http://www.w3.org/1999/xhtml" style="background-color: transparent;" >
@@ -144,6 +144,7 @@
 	private bool isDraggingStartPoint = false; // 始点をドラッグ中のフラグ
 	private bool isDraggingEntirePath = false; // 通路全体をドラッグ中のフラグ
 	private double initialMouseX, initialMouseY; // 初期マウス位置
+	private WarehousePath? selectedPath; // 現在選択されている通路を保持する変数
 
 
 	/// <summary>
@@ -431,7 +432,7 @@
 	}
 
 	/// <summary>
-	/// 通路全体のドラッグ開始イベントハンドラ。
+	/// 通路のドラッグ開始イベントハンドラ。
 	/// </summary>
 	/// <param name="e"></param>
 	/// <param name="path"></param>
@@ -444,29 +445,71 @@
 		initialMouseY = e.ClientY;
 	}
 
-	// 棚をクリックした時に選択状態にするメソッド
-	private void OnShelfClick(Shelf shelf)
+	/// <summary>
+    /// 棚をクリックした時に選択状態にするメソッド
+    /// </summary>
+    /// <param name="shelf">クリックされた棚</param>
+	private void SelectShelf(Shelf shelf)
 	{
 		selectedShelf = shelf;
+		selectedPath = null;
 		StateHasChanged();
 	}
 
-	// キーボードのキー押下イベントを処理するメソッド
-	private void OnKeyDown(KeyboardEventArgs e)
+	/// <summary>
+    /// 通路をクリックした時に選択状態にするメソッド
+    /// </summary>
+    /// <param name="path">クリックされた通路</param>
+    private void SelectPath(WarehousePath path)
     {
-        if ((e.Key == "Delete" || e.Key == "Backspace" )&& selectedShelf != null)
+        selectedPath = path;
+        selectedShelf = null;
+        StateHasChanged();
+    }
+
+	/// <summary>
+    /// キーボードのキー押下イベントを処理するメソッド
+    /// </summary>
+    /// <param name="e">キーボードイベント</param>
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Delete" || e.Key == "Backspace")
         {
-            RemoveShelf(selectedShelf);
+            if (selectedShelf != null)
+            {
+                await RemoveShelf(selectedShelf);
+            }
+            else if (selectedPath != null)
+            {
+                await RemovePath(selectedPath);
+            }
         }
     }
 
-	// 棚を削除するメソッド
-	private void RemoveShelf(Shelf shelf)
-	{
-		_Shelves.Remove(shelf);
-		dbContext.Shelves.Remove(shelf);
-		dbContext.SaveChangesAsync();
-		selectedShelf = null;
-		StateHasChanged();
-	}
+	/// <summary>
+    /// 棚を削除するメソッド
+    /// </summary>
+    /// <param name="shelf">削除する棚</param>
+    private async Task RemoveShelf(Shelf shelf)
+    {
+        _Shelves.Remove(shelf);
+        dbContext.Shelves.Remove(shelf);
+        await dbContext.SaveChangesAsync();
+        selectedShelf = null;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 通路を削除するメソッド
+    /// </summary>
+    /// <param name="path">削除する通路</param>
+    private async Task RemovePath(WarehousePath path)
+    {
+        _Paths.Remove(path);
+        dbContext.Paths.Remove(path);
+        await dbContext.SaveChangesAsync();
+        selectedPath = null;
+        StateHasChanged();
+    }
+
 	}
