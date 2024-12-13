@@ -91,8 +91,8 @@
 		<circle cx="@path.EndX" cy="@path.EndY" r="5" fill="red" @onmousedown="@(e => OnPathEndMouseDown(e, path))" />
 	}
 
-	@foreach (var shelf in _Shelves) 
-	{ 
+	@foreach (var shelf in _Shelves)
+	{
 		<!-- 棚の位置とサイズを描画 -->
 		<!--onmousedown を rect タグに設定: ドラッグの開始点を正確に特定するため。-->
 		<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" fill="@(shelf == selectedShelf ? "lightblue" : "lightgray")" stroke="black" @onmousedown="@(e => OnShelfMouseDown(e, shelf))" @onclick="@(e => SelectShelf(shelf))"/>
@@ -107,30 +107,16 @@
 		<!-- リサイズハンドルを描画 --> 
 		<polygon points="@(shelf.X + shelf.Width - 10),@(shelf.Y + shelf.Height) @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height - 10) @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height)" fill="rgba(0,0,0,0.5)" cursor="nwse-resize" @onmousedown="@(e => OnResizeHandleMouseDown(e, shelf))" style="pointer-events: all;" />
 
-	<!-- 最適経路を描画 -->
-    @for (int i = 0; i < routes.Count - 1; i++)
-    {
-        var pointA = routes[i];
-        var pointB = routes[i + 1];
+		<!-- 最適経路を描画 -->
+		@for (int i = 0; i < routes.Count - 1; i++)
+		{
+			var pointA = routes[i];
+			var pointB = routes[i + 1];
 
-        <!-- 経路のラインを描画 -->
-		if (i == routes.Count - 2)
-        {
-            <!-- 経路の最後のラインに矢印を描画 -->
-            <line x1="@pointA.X" y1="@pointA.Y" x2="@pointB.X" y2="@pointB.Y" stroke="red" marker-end="url(#arrowhead)" />
-        }
-        else
-        {
-            <!-- 経路のラインを描画 -->
-            <line x1="@pointA.X" y1="@pointA.Y" x2="@pointB.X" y2="@pointB.Y" stroke="red" />
-        }
-    }
-    <!-- 矢印の定義 -->
-    <defs>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="red" />
-        </marker>
-    </defs>
+			<!-- 経路のラインを描画 -->
+			<line x1="@pointA.X" y1="@pointA.Y" x2="@pointB.X" y2="@pointB.Y" stroke="rgba(173, 216, 230, 0.15)" stroke-width="10" />
+		}
+
 	}
 </svg>
 
@@ -544,126 +530,126 @@
     }
 
 	/// <summary>
-/// 最適ルートの経路を更新します。
-/// </summary>
-private void UpdateRoutes()
-{
-    routes.Clear();
-    for (int i = 0; i < _optimalRoute.Count - 1; i++)
-    {
-        var currentProduct = _optimalRoute[i];
-        var nextProduct = _optimalRoute[i + 1];
+	/// 最適ルートの経路を更新します。
+	/// </summary>
+	private void UpdateRoutes()
+	{
+		routes.Clear();
+		for (int i = 0; i < _optimalRoute.Count - 1; i++)
+		{
+			var currentProduct = _optimalRoute[i];
+			var nextProduct = _optimalRoute[i + 1];
 
-        RoutePoint pointA, pointB;
-        var aisleA = RouteCalculator.FindNearestAisle(currentProduct, _Paths, out pointA);
-        var aisleB = RouteCalculator.FindNearestAisle(nextProduct, _Paths, out pointB);
+			RoutePoint pointA, pointB;
+			var aisleA = RouteCalculator.FindNearestAisle(currentProduct, _Paths, out pointA);
+			var aisleB = RouteCalculator.FindNearestAisle(nextProduct, _Paths, out pointB);
 
-        routes.Add(pointA);
+			routes.Add(pointA);
 
-        if (IsPathBlocked(pointA, pointB) )
-        {
+			if (IsPathBlocked(pointA, pointB))
+			{
 
-            // Aから通路の端点へ移動
-            var closestEndPointA = GetClosestEndPoint(pointA, aisleA);
-            routes.Add(closestEndPointA);
+				// Aから通路の端点へ移動
+				var closestEndPointA = GetClosestEndPoint(pointA, aisleA);
+				routes.Add(closestEndPointA);
 
-            // 端点Aから端点Bへ移動
-            var closestEndPointB = GetClosestEndPoint(pointB, aisleB);
-            routes.Add(closestEndPointB);
+				// 端点Aから端点Bへ移動
+				var closestEndPointB = GetClosestEndPoint(pointB, aisleB);
+				routes.Add(closestEndPointB);
 
-            // 端点Bから目的地点Bへ移動
-            routes.Add(pointB);
-        }
-        else
-        {
-            routes.Add(pointB);
-        }
-    }
-}
+				// 端点Bから目的地点Bへ移動
+				routes.Add(pointB);
+			}
+			else
+			{
+				routes.Add(pointB);
+			}
+		}
+	}
 
-/// <summary>
-/// 通路の端点のうち、指定した点に最も近い端点を取得します。
-/// </summary>
-/// <param name="point">基準となる点</param>
-/// <param name="aisle">通路</param>
-/// <returns>最も近い端点の座標</returns>
-private RoutePoint GetClosestEndPoint(RoutePoint point, WarehousePath aisle)
-{
-    var endPoint1 = new RoutePoint { X = aisle.StartX, Y = aisle.StartY };
-    var endPoint2 = new RoutePoint { X = aisle.EndX, Y = aisle.EndY };
-    
-    var distanceToEndPoint1 = Math.Sqrt(Math.Pow(point.X - endPoint1.X, 2) + Math.Pow(point.Y - endPoint1.Y, 2));
-    var distanceToEndPoint2 = Math.Sqrt(Math.Pow(point.X - endPoint2.X, 2) + Math.Pow(point.Y - endPoint2.Y, 2));
+	/// <summary>
+	/// 通路の端点のうち、指定した点に最も近い端点を取得します。
+	/// </summary>
+	/// <param name="point">基準となる点</param>
+	/// <param name="aisle">通路</param>
+	/// <returns>最も近い端点の座標</returns>
+	private RoutePoint GetClosestEndPoint(RoutePoint point, WarehousePath aisle)
+	{
+		var endPoint1 = new RoutePoint { X = aisle.StartX, Y = aisle.StartY };
+		var endPoint2 = new RoutePoint { X = aisle.EndX, Y = aisle.EndY };
 
-    
-    return distanceToEndPoint1 < distanceToEndPoint2 ? endPoint1 : endPoint2;
-}
+		var distanceToEndPoint1 = Math.Sqrt(Math.Pow(point.X - endPoint1.X, 2) + Math.Pow(point.Y - endPoint1.Y, 2));
+		var distanceToEndPoint2 = Math.Sqrt(Math.Pow(point.X - endPoint2.X, 2) + Math.Pow(point.Y - endPoint2.Y, 2));
 
-/// <summary>
-/// 2つの点間に通路があるかどうかをチェックします。
-/// </summary>
-/// <param name="pointA">始点の座標</param>
-/// <param name="pointB">終点の座標</param>
-/// <returns>通路が存在する場合はtrue、それ以外の場合はfalse</returns>
-private bool IsPathBlocked(RoutePoint pointA, RoutePoint pointB)
-{
-    foreach (var path in _Paths)
-    {
-        if (IsPointOnLineSegment(pointA, pointB, new RoutePoint { X = path.StartX, Y = path.StartY }) &&
-            IsPointOnLineSegment(pointA, pointB, new RoutePoint { X = path.EndX, Y = path.EndY }))
-        {
-            return false;
-        }
-    }
-    return true;
-}
 
-/// <summary>
-/// 2つの線分が交差するかどうかを判定します。
-/// </summary>
-/// <param name="p1">線分1の始点</param>
-/// <param="p2">線分1の終点</param>
-/// <param="q1">線分2の始点</param>
-/// <param="q2">線分2の終点</param>
-/// <returns>交差する場合はtrue、それ以外の場合はfalse</returns>
-private bool DoLinesIntersect(RoutePoint p1, RoutePoint p2, RoutePoint q1, RoutePoint q2)
-{
-    double Orientation(RoutePoint a, RoutePoint b, RoutePoint c)
-    {
-        return (b.Y - a.Y) * (c.X - b.X) - (b.X - a.X) * (c.Y - b.Y);
-    }
+		return distanceToEndPoint1 < distanceToEndPoint2 ? endPoint1 : endPoint2;
+	}
 
-    bool OnSegment(RoutePoint a, RoutePoint b, RoutePoint c)
-    {
-        return Math.Min(a.X, b.X) <= c.X && c.X <= Math.Max(a.X, b.X) && Math.Min(a.Y, b.Y) <= c.Y && c.Y <= Math.Max(a.Y, b.Y);
-    }
+	/// <summary>
+	/// 2つの点間に通路があるかどうかをチェックします。
+	/// </summary>
+	/// <param name="pointA">始点の座標</param>
+	/// <param name="pointB">終点の座標</param>
+	/// <returns>通路が存在する場合はtrue、それ以外の場合はfalse</returns>
+	private bool IsPathBlocked(RoutePoint pointA, RoutePoint pointB)
+	{
+		foreach (var path in _Paths)
+		{
+			if (IsPointOnLineSegment(pointA, pointB, new RoutePoint { X = path.StartX, Y = path.StartY }) &&
+			IsPointOnLineSegment(pointA, pointB, new RoutePoint { X = path.EndX, Y = path.EndY }))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 
-    double o1 = Orientation(p1, p2, q1);
-    double o2 = Orientation(p1, p2, q2);
-    double o3 = Orientation(q1, q2, p1);
-    double o4 = Orientation(q1, q2, p2);
+	/// <summary>
+	/// 2つの線分が交差するかどうかを判定します。
+	/// </summary>
+	/// <param name="p1">線分1の始点</param>
+	/// <param="p2">線分1の終点</param>
+	/// <param="q1">線分2の始点</param>
+	/// <param="q2">線分2の終点</param>
+	/// <returns>交差する場合はtrue、それ以外の場合はfalse</returns>
+	private bool DoLinesIntersect(RoutePoint p1, RoutePoint p2, RoutePoint q1, RoutePoint q2)
+	{
+		double Orientation(RoutePoint a, RoutePoint b, RoutePoint c)
+		{
+			return (b.Y - a.Y) * (c.X - b.X) - (b.X - a.X) * (c.Y - b.Y);
+		}
 
-    if (o1 != o2 && o3 != o4) return true;
-    if (o1 == 0 && OnSegment(p1, p2, q1)) return true;
-    if (o2 == 0 && OnSegment(p1, p2, q2)) return true;
-    if (o3 == 0 && OnSegment(q1, q2, p1)) return true;
-    if (o4 == 0 && OnSegment(q1, q2, p2)) return true;
+		bool OnSegment(RoutePoint a, RoutePoint b, RoutePoint c)
+		{
+			return Math.Min(a.X, b.X) <= c.X && c.X <= Math.Max(a.X, b.X) && Math.Min(a.Y, b.Y) <= c.Y && c.Y <= Math.Max(a.Y, b.Y);
+		}
 
-    return false;
-}
+		double o1 = Orientation(p1, p2, q1);
+		double o2 = Orientation(p1, p2, q2);
+		double o3 = Orientation(q1, q2, p1);
+		double o4 = Orientation(q1, q2, p2);
 
-/// <summary>
-/// 点が線分上に存在するかどうかを判定します。
-/// </summary>
-/// <param name="p1">線分の始点</param>
-/// <param name="p2">線分の終点</param>
-/// <param name="p">判定する点</param>
-/// <returns>存在する場合はtrue、それ以外の場合はfalse</returns>
-private bool IsPointOnLineSegment(RoutePoint p1, RoutePoint p2, RoutePoint p)
-{
-    return (p.X <= Math.Max(p1.X, p2.X) && p.X >= Math.Min(p1.X, p2.X) &&
-            p.Y <= Math.Max(p1.Y, p2.Y) && p.Y >= Math.Min(p1.Y, p2.Y) &&
-            (p2.X - p1.X) * (p.Y - p1.Y) == (p.X - p1.X) * (p2.Y - p1.Y));
-}
+		if (o1 != o2 && o3 != o4) return true;
+		if (o1 == 0 && OnSegment(p1, p2, q1)) return true;
+		if (o2 == 0 && OnSegment(p1, p2, q2)) return true;
+		if (o3 == 0 && OnSegment(q1, q2, p1)) return true;
+		if (o4 == 0 && OnSegment(q1, q2, p2)) return true;
+
+		return false;
+	}
+
+	/// <summary>
+	/// 点が線分上に存在するかどうかを判定します。
+	/// </summary>
+	/// <param name="p1">線分の始点</param>
+	/// <param name="p2">線分の終点</param>
+	/// <param name="p">判定する点</param>
+	/// <returns>存在する場合はtrue、それ以外の場合はfalse</returns>
+	private bool IsPointOnLineSegment(RoutePoint p1, RoutePoint p2, RoutePoint p)
+	{
+		return (p.X <= Math.Max(p1.X, p2.X) && p.X >= Math.Min(p1.X, p2.X) &&
+		p.Y <= Math.Max(p1.Y, p2.Y) && p.Y >= Math.Min(p1.Y, p2.Y) &&
+		(p2.X - p1.X) * (p.Y - p1.Y) == (p.X - p1.X) * (p2.Y - p1.Y));
+	}
 
 	}
