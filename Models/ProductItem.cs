@@ -52,4 +52,13 @@ namespace PickingRoute.Models
 		public double EndY { get; set; }
 	}
 
+	/// <summary> 
+	/// 通路上の地点を表すクラス 
+	/// </summary>
+	public class RoutePoint
+	{
+		public double X { get; set; }
+		public double Y { get; set; }
+	}
+
 }

@@ -37,6 +37,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 builder.Services.AddScoped<ProductListService>();
+builder.Services.AddScoped<RouteCalculator>();
 
 var app = builder.Build();
 
