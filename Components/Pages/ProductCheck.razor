@@ -546,26 +546,42 @@
 
 			routes.Add(pointA);
 
-			if (IsPathBlocked(pointA, pointB))
+			if (aisleA == aisleB)
 			{
-
-				// Aから通路の端点へ移動
-				var closestEndPointA = GetClosestEndPoint(pointA, aisleA);
-				routes.Add(closestEndPointA);
-
-				// 端点Aから端点Bへ移動
-				var closestEndPointB = GetClosestEndPoint(pointB, aisleB);
-				routes.Add(closestEndPointB);
-
-				// 端点Bから目的地点Bへ移動
+				// 同じ通路上にある場合、そのまま結ぶ
 				routes.Add(pointB);
 			}
 			else
 			{
-				routes.Add(pointB);
+				// 通路の端点を通る経路を設定
+				AddPathBetweenEndpoints(pointA, pointB, aisleA, aisleB);
 			}
+
 		}
 	}
+
+	/// <summary>
+	/// 指定した2つの点間の最適経路を追加します。
+	/// 通路の端点を経由して経路を設定します。
+	/// </summary>
+	/// <param name="pointA">始点の座標</param>
+	/// <param name="pointB">終点の座標</param>
+	/// <param name="aisleA">始点が属する通路</param>
+	/// <param name="aisleB">終点が属する通路</param>
+	private void AddPathBetweenEndpoints(RoutePoint pointA, RoutePoint pointB, WarehousePath aisleA, WarehousePath aisleB)
+	{
+		// 始点に最も近い端点を取得し、経路に追加
+		var closestEndPointA = GetClosestEndPoint(pointA, aisleA);
+		routes.Add(closestEndPointA);
+
+		// 終点に最も近い端点を取得し、経路に追加
+		var closestEndPointB = GetClosestEndPoint(pointB, aisleB);
+		routes.Add(closestEndPointB);
+
+		// 終点を経路に追加
+		routes.Add(pointB);
+	}
+
 
 	/// <summary>
 	/// 通路の端点のうち、指定した点に最も近い端点を取得します。
@@ -585,71 +601,5 @@
 		return distanceToEndPoint1 < distanceToEndPoint2 ? endPoint1 : endPoint2;
 	}
 
-	/// <summary>
-	/// 2つの点間に通路があるかどうかをチェックします。
-	/// </summary>
-	/// <param name="pointA">始点の座標</param>
-	/// <param name="pointB">終点の座標</param>
-	/// <returns>通路が存在する場合はtrue、それ以外の場合はfalse</returns>
-	private bool IsPathBlocked(RoutePoint pointA, RoutePoint pointB)
-	{
-		foreach (var path in _Paths)
-		{
-			if (IsPointOnLineSegment(pointA, pointB, new RoutePoint { X = path.StartX, Y = path.StartY }) &&
-			IsPointOnLineSegment(pointA, pointB, new RoutePoint { X = path.EndX, Y = path.EndY }))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/// <summary>
-	/// 2つの線分が交差するかどうかを判定します。
-	/// </summary>
-	/// <param name="p1">線分1の始点</param>
-	/// <param="p2">線分1の終点</param>
-	/// <param="q1">線分2の始点</param>
-	/// <param="q2">線分2の終点</param>
-	/// <returns>交差する場合はtrue、それ以外の場合はfalse</returns>
-	private bool DoLinesIntersect(RoutePoint p1, RoutePoint p2, RoutePoint q1, RoutePoint q2)
-	{
-		double Orientation(RoutePoint a, RoutePoint b, RoutePoint c)
-		{
-			return (b.Y - a.Y) * (c.X - b.X) - (b.X - a.X) * (c.Y - b.Y);
-		}
-
-		bool OnSegment(RoutePoint a, RoutePoint b, RoutePoint c)
-		{
-			return Math.Min(a.X, b.X) <= c.X && c.X <= Math.Max(a.X, b.X) && Math.Min(a.Y, b.Y) <= c.Y && c.Y <= Math.Max(a.Y, b.Y);
-		}
-
-		double o1 = Orientation(p1, p2, q1);
-		double o2 = Orientation(p1, p2, q2);
-		double o3 = Orientation(q1, q2, p1);
-		double o4 = Orientation(q1, q2, p2);
-
-		if (o1 != o2 && o3 != o4) return true;
-		if (o1 == 0 && OnSegment(p1, p2, q1)) return true;
-		if (o2 == 0 && OnSegment(p1, p2, q2)) return true;
-		if (o3 == 0 && OnSegment(q1, q2, p1)) return true;
-		if (o4 == 0 && OnSegment(q1, q2, p2)) return true;
-
-		return false;
-	}
-
-	/// <summary>
-	/// 点が線分上に存在するかどうかを判定します。
-	/// </summary>
-	/// <param name="p1">線分の始点</param>
-	/// <param name="p2">線分の終点</param>
-	/// <param name="p">判定する点</param>
-	/// <returns>存在する場合はtrue、それ以外の場合はfalse</returns>
-	private bool IsPointOnLineSegment(RoutePoint p1, RoutePoint p2, RoutePoint p)
-	{
-		return (p.X <= Math.Max(p1.X, p2.X) && p.X >= Math.Min(p1.X, p2.X) &&
-		p.Y <= Math.Max(p1.Y, p2.Y) && p.Y >= Math.Min(p1.Y, p2.Y) &&
-		(p2.X - p1.X) * (p.Y - p1.Y) == (p.X - p1.X) * (p2.Y - p1.Y));
-	}
 
 	}
