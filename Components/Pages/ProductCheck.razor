@@ -463,9 +463,9 @@
 	}
 
 	/// <summary>
-    /// 棚をクリックした時に選択状態にするメソッド
-    /// </summary>
-    /// <param name="shelf">クリックされた棚</param>
+	/// 棚をクリックした時に選択状態にするメソッド
+	/// </summary>
+	/// <param name="shelf">クリックされた棚</param>
 	private void SelectShelf(Shelf shelf)
 	{
 		selectedShelf = shelf;
@@ -474,60 +474,60 @@
 	}
 
 	/// <summary>
-    /// 通路をクリックした時に選択状態にするメソッド
-    /// </summary>
-    /// <param name="path">クリックされた通路</param>
-    private void SelectPath(WarehousePath path)
-    {
-        selectedPath = path;
-        selectedShelf = null;
-        StateHasChanged();
-    }
+	/// 通路をクリックした時に選択状態にするメソッド
+	/// </summary>
+	/// <param name="path">クリックされた通路</param>
+	private void SelectPath(WarehousePath path)
+	{
+		selectedPath = path;
+		selectedShelf = null;
+		StateHasChanged();
+	}
 
 	/// <summary>
-    /// キーボードのキー押下イベントを処理するメソッド
-    /// </summary>
-    /// <param name="e">キーボードイベント</param>
-    private async Task HandleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Delete" || e.Key == "Backspace")
-        {
-            if (selectedShelf != null)
-            {
-                await RemoveShelf(selectedShelf);
-            }
-            else if (selectedPath != null)
-            {
-                await RemovePath(selectedPath);
-            }
-        }
-    }
+	/// キーボードのキー押下イベントを処理するメソッド
+	/// </summary>
+	/// <param name="e">キーボードイベント</param>
+	private async Task HandleKeyDown(KeyboardEventArgs e)
+	{
+		if (e.Key == "Delete" || e.Key == "Backspace")
+		{
+			if (selectedShelf != null)
+			{
+				await RemoveShelf(selectedShelf);
+			}
+			else if (selectedPath != null)
+			{
+				await RemovePath(selectedPath);
+			}
+		}
+	}
 
 	/// <summary>
-    /// 棚を削除するメソッド
-    /// </summary>
-    /// <param name="shelf">削除する棚</param>
-    private async Task RemoveShelf(Shelf shelf)
-    {
-        _Shelves.Remove(shelf);
-        dbContext.Shelves.Remove(shelf);
-        await dbContext.SaveChangesAsync();
-        selectedShelf = null;
-        StateHasChanged();
-    }
+	/// 棚を削除するメソッド
+	/// </summary>
+	/// <param name="shelf">削除する棚</param>
+	private async Task RemoveShelf(Shelf shelf)
+	{
+		_Shelves.Remove(shelf);
+		dbContext.Shelves.Remove(shelf);
+		await dbContext.SaveChangesAsync();
+		selectedShelf = null;
+		StateHasChanged();
+	}
 
-    /// <summary>
-    /// 通路を削除するメソッド
-    /// </summary>
-    /// <param name="path">削除する通路</param>
-    private async Task RemovePath(WarehousePath path)
-    {
-        _Paths.Remove(path);
-        dbContext.Paths.Remove(path);
-        await dbContext.SaveChangesAsync();
-        selectedPath = null;
-        StateHasChanged();
-    }
+	/// <summary>
+	/// 通路を削除するメソッド
+	/// </summary>
+	/// <param name="path">削除する通路</param>
+	private async Task RemovePath(WarehousePath path)
+	{
+		_Paths.Remove(path);
+		dbContext.Paths.Remove(path);
+		await dbContext.SaveChangesAsync();
+		selectedPath = null;
+		StateHasChanged();
+	}
 
 	/// <summary>
 	/// 最適ルートの経路を更新します。
@@ -544,11 +544,11 @@
 			var aisleA = RouteCalculator.FindNearestAisle(currentProduct, _Paths, out pointA);
 			var aisleB = RouteCalculator.FindNearestAisle(nextProduct, _Paths, out pointB);
 
-			routes.Add(pointA);
 
 			if (aisleA == aisleB)
 			{
 				// 同じ通路上にある場合、そのまま結ぶ
+				routes.Add(pointA);
 				routes.Add(pointB);
 			}
 			else
@@ -557,12 +557,13 @@
 				AddPathBetweenEndpoints(pointA, pointB, aisleA, aisleB);
 			}
 
+
 		}
 	}
 
 	/// <summary>
 	/// 指定した2つの点間の最適経路を追加します。
-	/// 通路の端点を経由して経路を設定します。
+	/// 複数の通路の端点を経由して経路を設定します。
 	/// </summary>
 	/// <param name="pointA">始点の座標</param>
 	/// <param name="pointB">終点の座標</param>
@@ -570,36 +571,104 @@
 	/// <param name="aisleB">終点が属する通路</param>
 	private void AddPathBetweenEndpoints(RoutePoint pointA, RoutePoint pointB, WarehousePath aisleA, WarehousePath aisleB)
 	{
-		// 始点に最も近い端点を取得し、経路に追加
-		var closestEndPointA = GetClosestEndPoint(pointA, aisleA);
-		routes.Add(closestEndPointA);
+		// 商品Aが直接繋げられるのはaisleAの始点終点だけ
+		var startPoints = new List<RoutePoint>
+	{
+	new RoutePoint { X = aisleA.StartX, Y = aisleA.StartY },
+	new RoutePoint { X = aisleA.EndX, Y = aisleA.EndY }
+	};
 
-		// 終点に最も近い端点を取得し、経路に追加
-		var closestEndPointB = GetClosestEndPoint(pointB, aisleB);
-		routes.Add(closestEndPointB);
+		// 商品Bが直接繋げられるのはaisleBの始点終点だけ
+		var endPoints = new List<RoutePoint>
+	{
+	new RoutePoint { X = aisleB.StartX, Y = aisleB.StartY },
+	new RoutePoint { X = aisleB.EndX, Y = aisleB.EndY }
+	};
 
-		// 終点を経路に追加
+		// 他の通路の端点もリストに追加
+		var allEndPoints = new List<RoutePoint>();
+		foreach (var path in _Paths)
+		{
+			if (path != aisleA && path != aisleB)
+			{
+				allEndPoints.Add(new RoutePoint { X = path.StartX, Y = path.StartY });
+				allEndPoints.Add(new RoutePoint { X = path.EndX, Y = path.EndY });
+			}
+		}
+
+		// 最適経路を格納するリスト
+		var optimalRoute = new List<RoutePoint>();
+
+		// 商品Aと直接繋げられる端点から最適経路を算出
+		double bestDistance = double.MaxValue;
+		RoutePoint bestStartPoint = null;
+		RoutePoint bestEndPoint = null;
+		foreach (var startPoint in startPoints)
+		{
+			foreach (var endPoint in endPoints)
+			{
+				double distance = CalculateDistance(startPoint, endPoint);
+				if (distance < bestDistance)
+				{
+					bestDistance = distance;
+					bestStartPoint = startPoint;
+					bestEndPoint = endPoint;
+				}
+			}
+		}
+
+		// 最適な組み合わせを選ぶ
+		if (bestStartPoint != null && bestEndPoint != null)
+		{
+			optimalRoute.Add(bestStartPoint);
+			optimalRoute.Add(bestEndPoint);
+		}
+
+		// 他の通路の端点を含めた最適経路を算出
+		//const double thresholdDistance = 5.0;
+		for (int i = 0; i < allEndPoints.Count; i++)
+		{
+			for (int j = i + 1; j < allEndPoints.Count; j++)
+			{
+				var point1 = allEndPoints[i];
+				var point2 = allEndPoints[j];
+
+				double distance = CalculateDistance(point1, point2);
+				//if (distance < thresholdDistance && distance < bestDistance)
+				if (distance < bestDistance)
+				{
+					bestDistance = distance;
+					bestStartPoint = point1;
+					bestEndPoint = point2;
+				}
+			}
+		}
+
+		// 経路に商品座標を追加
+		routes.Add(pointA);
+		if (optimalRoute.Count > 0)
+		{
+			routes.Add(optimalRoute[0]);
+			for (int i = 1; i < optimalRoute.Count; i++)
+			{
+				routes.Add(optimalRoute[i]);
+			}
+		}
 		routes.Add(pointB);
-	}
 
+	}
 
 	/// <summary>
-	/// 通路の端点のうち、指定した点に最も近い端点を取得します。
+	/// 2点間のユークリッド距離を計算します。
 	/// </summary>
-	/// <param name="point">基準となる点</param>
-	/// <param name="aisle">通路</param>
-	/// <returns>最も近い端点の座標</returns>
-	private RoutePoint GetClosestEndPoint(RoutePoint point, WarehousePath aisle)
+	/// <param name="a">点A</param>
+	/// <param name="b">点B</param>
+	/// <returns>2点間の距離</returns>
+	private double CalculateDistance(RoutePoint a, RoutePoint b)
 	{
-		var endPoint1 = new RoutePoint { X = aisle.StartX, Y = aisle.StartY };
-		var endPoint2 = new RoutePoint { X = aisle.EndX, Y = aisle.EndY };
-
-		var distanceToEndPoint1 = Math.Sqrt(Math.Pow(point.X - endPoint1.X, 2) + Math.Pow(point.Y - endPoint1.Y, 2));
-		var distanceToEndPoint2 = Math.Sqrt(Math.Pow(point.X - endPoint2.X, 2) + Math.Pow(point.Y - endPoint2.Y, 2));
-
-
-		return distanceToEndPoint1 < distanceToEndPoint2 ? endPoint1 : endPoint2;
+		return Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2));
 	}
+
 
 
 	}
