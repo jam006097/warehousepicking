@@ -605,6 +605,7 @@
 		RoutePoint bestEndPoint = null;
 		foreach (var startPoint in startPoints)
 		{
+			// 商品Bと直接繋げられる端点から最適経路を算出
 			foreach (var endPoint in endPoints)
 			{
 				double distance = CalculateDistance(startPoint, endPoint);
@@ -634,7 +635,6 @@
 				var point2 = allEndPoints[j];
 
 				double distance = CalculateDistance(point1, point2);
-				//if (distance < thresholdDistance && distance < bestDistance)
 				if (distance < bestDistance)
 				{
 					bestDistance = distance;
