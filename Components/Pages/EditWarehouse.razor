@@ -1,0 +1,386 @@
+﻿@page "/editwarehouse"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using PickingRoute.Data
+@using PickingRoute.Models
+@using PickingRoute.Services
+@inject ApplicationDbContext dbContext
+@inject RouteCalculator RouteCalculator
+
+<h1>倉庫配置図の編集</h1>
+
+<!-- SVG 要素内でのマウスの動きを追跡 -->
+<svg width="800" height="600" style="border: 1px solid black;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onkeydown="HandleKeyDown" tabindex="0">
+
+	<!-- 背面に描画するために通路を先に描画 -->
+	@foreach (var path in _Paths)
+	{
+		<line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" stroke="@((path == selectedPath) ? "lightblue" : "lightgray")" stroke-width="10" @onmousedown="@(e => OnPathMouseDown(e, path))" @onclick="@(e => SelectPath(path))"/>
+		<circle cx="@path.StartX" cy="@path.StartY" r="5" fill="blue" @onmousedown="@(e => OnPathStartMouseDown(e, path))" />
+		<circle cx="@path.EndX" cy="@path.EndY" r="5" fill="red" @onmousedown="@(e => OnPathEndMouseDown(e, path))" />
+	}
+
+	@foreach (var shelf in _Shelves)
+	{
+		<!-- 棚の位置とサイズを描画 -->
+		<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" fill="@(shelf == selectedShelf ? "lightblue" : "lightgray")" stroke="black" @onmousedown="@(e => OnShelfMouseDown(e, shelf))" @onclick="@(e => SelectShelf(shelf))"/>
+
+		<foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30">
+			<body xmlns="http://www.w3.org/1999/xhtml" style="background-color: transparent;" >
+				<!-- 棚の名前を表示するテキストボックス。ダブルクリックで編集モードになる -->
+				<input type="text" id="shelf-@shelf.Id" @bind="shelf.Name" @onblur="@(async e => await OnShelfNameChanged(shelf))" class="form-control-plaintext" style="background-color: transparent; width: auto; min-width: 50px; max-width: 400px; padding: 2px; border: none;" size="@Math.Max(1, shelf.Name.Length)" autocomplete="off" />
+			</body>
+		</foreignObject>
+
+		<!-- リサイズハンドルを描画 --> 
+		<polygon points="@(shelf.X + shelf.Width - 10),@(shelf.Y + shelf.Height) @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height - 10) @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height)" fill="rgba(0,0,0,0.5)" cursor="nwse-resize" @onmousedown="@(e => OnResizeHandleMouseDown(e, shelf))" style="pointer-events: all;" />
+
+	}
+</svg>
+
+<h2>新しい棚を追加</h2> 
+<button class="btn btn-primary" @onclick="AddNewShelf">新しい棚を追加</button>
+@foreach (var shelf in _Shelves)
+{
+	<li>@shelf.Name </li>
+}
+
+<h2>新しい通路を追加</h2> 
+<button class="btn btn-primary" @onclick="AddNewPath">新しい通路を追加</button>
+
+
+@code {
+
+	private List<Shelf> _Shelves = new();
+	private Dictionary<int, ElementReference> shelfElements = new(); 
+	private Shelf? draggingShelf; // ドラッグ中の棚
+	private bool isDragging = false; // ドラッグ状態のフラグ
+	private double offsetX, offsetY;　// マウスと棚の位置のオフセット
+
+	private bool isAddingShelf = false; // 新しい棚を追加するフラグ
+	private Shelf? newShelf; // 新しい棚の情報を保持
+	private const double CenterX = 400; // 倉庫内配置図の中央のX座標
+	private const double CenterY = 300; // 倉庫内配置図の中央のY座標
+	private Shelf? resizingShelf; // リサイズ中の棚
+	private Shelf? selectedShelf;	// 現在選択されている棚を保持する変数
+
+	private List<WarehousePath> _Paths = new();  // 通路のリストを初期化
+	private WarehousePath? newPath; // 追加: 新しい通路の情報を保持
+	private bool isDraggingPath = false; // ドラッグ状態のフラグ
+	private WarehousePath? draggingPath; // ドラッグ中の通路
+	private bool isDraggingStartPoint = false; // 始点をドラッグ中のフラグ
+	private bool isDraggingEntirePath = false; // 通路全体をドラッグ中のフラグ
+	private double initialMouseX, initialMouseY; // 初期マウス位置
+	private WarehousePath? selectedPath; // 現在選択されている通路を保持する変数
+
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	/// <returns></returns>
+	protected override async Task OnInitializedAsync()
+	{
+		_Shelves = await dbContext.Shelves.ToListAsync();
+		_Paths = await dbContext.Paths.ToListAsync();
+	}
+
+	/// <summary> 
+	/// マウスダウンイベントハンドラ。対象の棚を特定し、ドラッグを開始する。
+	/// </summary> 
+	/// <param name="e"></param> 
+	/// <param name="shelf"></param>
+	private void OnShelfMouseDown(MouseEventArgs e, Shelf shelf) 
+	{
+		draggingShelf = shelf; // ドラッグ中の棚をセット
+		isDragging = true;  // ドラッグ中フラグをセット
+		offsetX = e.ClientX - shelf.X; // マウスのX座標と棚のX座標の差を計算
+		offsetY = e.ClientY - shelf.Y; // マウスのY座標と棚のY座標の差を計算
+	}
+
+	/// <summary> 
+	/// マウスムーブイベントハンドラ。通路や棚の位置を更新する。
+	/// </summary>
+	/// <param name="e"></param>
+	private void OnMouseMove(MouseEventArgs e)
+	{
+		if (isDragging)
+		{
+			if (draggingShelf != null)
+			{
+				draggingShelf.X = e.ClientX - offsetX; // 新しいX座標を計算
+				draggingShelf.Y = e.ClientY - offsetY; // 新しいY座標を計算
+				StateHasChanged(); // UIを更新する
+			}
+			else if (resizingShelf != null)
+			{
+				resizingShelf.Width = Math.Max(10, e.ClientX - resizingShelf.X - offsetX); // 新しい幅を計算
+				resizingShelf.Height = Math.Max(10, e.ClientY - resizingShelf.Y - offsetY); // 新しい高さを計算
+				StateHasChanged(); // UIを更新する
+			}
+			else if (isDraggingEntirePath && draggingPath != null)
+			{
+				double deltaX = e.ClientX - initialMouseX;
+				double deltaY = e.ClientY - initialMouseY;
+
+				draggingPath.StartX += deltaX;
+				draggingPath.StartY += deltaY;
+				draggingPath.EndX += deltaX;
+				draggingPath.EndY += deltaY;
+
+				initialMouseX = e.ClientX;
+				initialMouseY = e.ClientY;
+
+				StateHasChanged();
+			}
+			else if (draggingPath != null)
+			{
+				if (isDraggingStartPoint)
+				{
+					draggingPath.StartX = e.ClientX - offsetX;
+					draggingPath.StartY = e.ClientY - offsetY;
+				}
+				else
+				{
+					draggingPath.EndX = e.ClientX - offsetX;
+					draggingPath.EndY = e.ClientY - offsetY;
+				}
+				StateHasChanged();
+			}
+		}
+	}
+
+	/// <summary> 
+	/// マウスアップイベントハンドラ。ドラッグやリサイズを終了し、データベースに保存する。 
+	/// </summary> /// <param name="e"></param>
+	private async void OnMouseUp(MouseEventArgs e)
+	{
+		if (isDragging)
+		{
+			isDragging = false; // ドラッグ中フラグをリセット
+			if (draggingShelf != null)
+			{
+				var shelf = await dbContext.Shelves.FindAsync(draggingShelf.Id);
+				if (shelf != null)
+				{
+					shelf.X = draggingShelf.X; // 新しいX座標を保存
+					shelf.Y = draggingShelf.Y; // 新しいY座標を保存
+					await dbContext.SaveChangesAsync(); // データベースに保存
+				}
+				draggingShelf = null; // ドラッグ中の棚をリセット
+			}
+			else if (resizingShelf != null)
+			{
+				var shelf = await dbContext.Shelves.FindAsync(resizingShelf.Id);
+				if (shelf != null)
+				{
+					shelf.Width = resizingShelf.Width; // 新しい幅を保存
+					shelf.Height = resizingShelf.Height; // 新しい高さを保存
+					await dbContext.SaveChangesAsync(); // データベースに保存
+				}
+				resizingShelf = null; // リサイズ中の棚をリセット
+			}
+			else if (isDraggingEntirePath && draggingPath != null)
+			{
+				var path = await dbContext.Paths.FindAsync(draggingPath.Id);
+				if (path != null)
+				{
+					path.StartX = draggingPath.StartX;
+					path.StartY = draggingPath.StartY;
+					path.EndX = draggingPath.EndX;
+					path.EndY = draggingPath.EndY;
+					await dbContext.SaveChangesAsync();
+				}
+				draggingPath = null;
+				isDraggingEntirePath = false;
+			}
+			else if (draggingPath != null)
+			{
+				var path = await dbContext.Paths.FindAsync(draggingPath.Id);
+				if (path != null)
+				{
+					path.StartX = draggingPath.StartX;
+					path.StartY = draggingPath.StartY;
+					path.EndX = draggingPath.EndX;
+					path.EndY = draggingPath.EndY;
+					await dbContext.SaveChangesAsync();
+				}
+				draggingPath = null;
+			}
+		}
+	}
+
+
+	/// <summary> 
+	///  新しい棚を追加するメソッド 
+	///  </summary> 
+	private async void AddNewShelf() 
+	{ 
+		newShelf = new Shelf { Name = "新しい棚", X = CenterX, Y = CenterY }; // 初期位置を中央に設定 
+		_Shelves.Add(newShelf); // ローカルリストに追加 
+		dbContext.Shelves.Add(newShelf); // データベースに追加 
+		await dbContext.SaveChangesAsync(); // データベースに保存 
+		isAddingShelf = false; // フラグをリセット 
+		newShelf = null; // 新しい棚の情報をクリア 
+		StateHasChanged(); // UIを更新 
+	}
+
+	/// <summary>
+	/// 棚の名前を編集モードに切り替えるメソッド。 
+	/// </summary> 
+	/// <param name="shelf"></param> 
+	private void EditShelfName(Shelf shelf) 
+	{
+		shelf.Name = ""; // 空にしてユーザーが新しい名前を入力できるようにする 
+		StateHasChanged(); // UIを更新する 
+	}
+
+	private async Task SaveShelfName(Shelf shelf) 
+	{ 
+		var dbShelf = await dbContext.Shelves.FindAsync(shelf.Id); 
+		if (dbShelf != null) 
+		{ 
+			dbShelf.Name = shelf.Name; await dbContext.SaveChangesAsync(); 
+		} 
+	}
+
+	private async Task OnShelfNameChanged(Shelf shelf) 
+	{ 
+		await SaveShelfName(shelf); 
+		StateHasChanged(); 
+	}
+
+	/// <summary> 
+	/// リサイズハンドルのマウスダウンイベントハンドラ。リサイズを開始する。
+	///  </summary>
+	///  <param name="e"></param>
+	///  <param name="shelf"></param> 
+	private void OnResizeHandleMouseDown(MouseEventArgs e, Shelf shelf) 
+	{ 
+		resizingShelf = shelf; // リサイズ中の棚をセット 
+		isDragging = true; // ドラッグ中フラグをセット 
+		offsetX = e.ClientX - (shelf.X + shelf.Width); // マウスのX座標と棚の右端の差を計算
+		offsetY = e.ClientY - (shelf.Y + shelf.Height); // マウスのY座標と棚の下端の差を計算
+	}
+
+	/// <summary>
+	/// 新しい通路を追加するメソッド
+	/// </summary>
+	private async void AddNewPath()
+	{
+		newPath = new WarehousePath { StartX = 100, StartY = 100, EndX = 200, EndY = 100 }; // 初期位置を設定
+		_Paths.Add(newPath); // ローカルリストに追加
+		dbContext.Paths.Add(newPath); // データベースに追加
+		await dbContext.SaveChangesAsync(); // データベースに保存
+		newPath = null; // 新しい通路の情報をクリア
+		StateHasChanged(); // UIを更新
+	}
+
+	/// <summary>
+	/// 通路の始点のドラッグ開始イベントハンドラ。
+	/// </summary>
+	/// <param name="e"></param>
+	/// <param name="path"></param>
+	private void OnPathStartMouseDown(MouseEventArgs e, WarehousePath path)
+	{
+		draggingPath = path;
+		isDragging = true;
+		isDraggingStartPoint = true;
+		offsetX = e.ClientX - path.StartX;
+		offsetY = e.ClientY - path.StartY;
+	}
+
+	/// <summary>
+	/// 通路の終点のドラッグ開始イベントハンドラ。
+	/// </summary>
+	/// <param name="e"></param>
+	/// <param name="path"></param>
+	private void OnPathEndMouseDown(MouseEventArgs e, WarehousePath path)
+	{
+		draggingPath = path;
+		isDragging = true;
+		isDraggingStartPoint = false;
+		offsetX = e.ClientX - path.EndX;
+		offsetY = e.ClientY - path.EndY;
+	}
+
+	/// <summary>
+	/// 通路のドラッグ開始イベントハンドラ。
+	/// </summary>
+	/// <param name="e"></param>
+	/// <param name="path"></param>
+	private void OnPathMouseDown(MouseEventArgs e, WarehousePath path)
+	{
+		draggingPath = path;
+		isDragging = true;
+		isDraggingEntirePath = true;
+		initialMouseX = e.ClientX;
+		initialMouseY = e.ClientY;
+	}
+
+	/// <summary>
+	/// 棚をクリックした時に選択状態にするメソッド
+	/// </summary>
+	/// <param name="shelf">クリックされた棚</param>
+	private void SelectShelf(Shelf shelf)
+	{
+		selectedShelf = shelf;
+		selectedPath = null;
+		StateHasChanged();
+	}
+
+	/// <summary>
+	/// 通路をクリックした時に選択状態にするメソッド
+	/// </summary>
+	/// <param name="path">クリックされた通路</param>
+	private void SelectPath(WarehousePath path)
+	{
+		selectedPath = path;
+		selectedShelf = null;
+		StateHasChanged();
+	}
+
+	/// <summary>
+	/// キーボードのキー押下イベントを処理するメソッド
+	/// </summary>
+	/// <param name="e">キーボードイベント</param>
+	private async Task HandleKeyDown(KeyboardEventArgs e)
+	{
+		if (e.Key == "Delete" || e.Key == "Backspace")
+		{
+			if (selectedShelf != null)
+			{
+				await RemoveShelf(selectedShelf);
+			}
+			else if (selectedPath != null)
+			{
+				await RemovePath(selectedPath);
+			}
+		}
+	}
+
+	/// <summary>
+	/// 棚を削除するメソッド
+	/// </summary>
+	/// <param name="shelf">削除する棚</param>
+	private async Task RemoveShelf(Shelf shelf)
+	{
+		_Shelves.Remove(shelf);
+		dbContext.Shelves.Remove(shelf);
+		await dbContext.SaveChangesAsync();
+		selectedShelf = null;
+		StateHasChanged();
+	}
+
+	/// <summary>
+	/// 通路を削除するメソッド
+	/// </summary>
+	/// <param name="path">削除する通路</param>
+	private async Task RemovePath(WarehousePath path)
+	{
+		_Paths.Remove(path);
+		dbContext.Paths.Remove(path);
+		await dbContext.SaveChangesAsync();
+		selectedPath = null;
+		StateHasChanged();
+	}
+}
+
