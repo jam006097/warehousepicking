@@ -6,8 +6,6 @@
 @using PickingRoute.Services
 @inject ApplicationDbContext dbContext
 @inject RouteCalculator RouteCalculator
-@using Microsoft.JSInterop
-@inject IJSRuntime JS
 
 
 <h1>倉庫配置図の編集</h1>
@@ -40,6 +38,7 @@
 					<!-- 棚の名前を表示するテキストボックス。ダブルクリックで編集モードになる -->
 					<input type="text" id="shelf-@shelf.Id" @bind="shelf.Name" @onblur="@(async e => await OnShelfNameChanged(shelf))" 
 					class="form-control-plaintext input-plaintext" style="pointer-events: auto;" size="@Math.Max(1, shelf.Name.Length)" autocomplete="off" />
+
 				</body>
 			</foreignObject>
 
