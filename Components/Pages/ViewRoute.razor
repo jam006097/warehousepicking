@@ -10,6 +10,45 @@
 
 <h1>ピッキングルート</h1>
 
+<!--倉庫の配置図-->
+<div class="svg-container">
+	<svg width="800" height="600" tabindex="0">
+
+		@foreach (var path in _Paths)
+		{
+			<line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" class="line-deselected" stroke-width="10" />
+		}
+
+		@foreach (var shelf in _Shelves)
+		{
+			<!-- 棚の位置とサイズを描画 -->
+			<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" class="rect-deselected"  />
+
+			<foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30" style="pointer-events: none;">
+				<body xmlns="http://www.w3.org/1999/xhtml" class="foreign-object-body">
+					<div class="form-control-plaintext input-plaintext">@shelf.Name</div>
+
+				</body>
+			</foreignObject>
+		}
+	</svg>
+</div>
+
+
+
 @code {
+
+	private List<Shelf> _Shelves = new();
+	private List<WarehousePath> _Paths = new();
+
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	/// <returns></returns>
+	protected override async Task OnInitializedAsync()
+	{
+		_Shelves = await dbContext.Shelves.ToListAsync();
+		_Paths = await dbContext.Paths.ToListAsync();
+	}
 
 }
