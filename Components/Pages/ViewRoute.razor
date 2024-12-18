@@ -6,6 +6,7 @@
 @using PickingRoute.Services
 @inject ApplicationDbContext dbContext
 @inject RouteCalculator RouteCalculator
+@inject RouteService RouteService
 
 
 <h1>ピッキングルート</h1>
@@ -32,10 +33,10 @@
 			</foreignObject>
 		}
 		<!-- 最適経路を描画 -->
-		@for (int i = 0; i < routes.Count - 1; i++)
+		@for (int i = 0; i < RouteService.Routes.Count - 1; i++)
 		{
-			var pointA = routes[i];
-			var pointB = routes[i + 1];
+			var pointA = RouteService.Routes[i];
+			var pointB = RouteService.Routes[i + 1];
 
 			<!-- 経路のラインを描画 -->
 			<line x1="@pointA.X" y1="@pointA.Y" x2="@pointB.X" y2="@pointB.Y" stroke="rgba(173, 216, 230, 0.8)" stroke-width="10" />
@@ -51,7 +52,6 @@
 
 	private List<Shelf> _Shelves = new();
 	private List<WarehousePath> _Paths = new();
-	private List<RoutePoint> routes = new List<RoutePoint>();
 
 	/// <summary>
 	/// 初期化処理
@@ -61,15 +61,6 @@
 	{
 		_Shelves = await dbContext.Shelves.ToListAsync();
 		_Paths = await dbContext.Paths.ToListAsync();
-
-		        // テストデータ
-        routes = new List<RoutePoint>
-        {
-            new RoutePoint { X = 74, Y = 102 },
-            new RoutePoint { X = 74, Y = 102 },
-            new RoutePoint { X = 80, Y = 108 },
-            new RoutePoint { X = 169.8548716204727, Y = 106.85096072096582 }
-        };
 	}
 
 }

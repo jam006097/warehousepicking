@@ -1,0 +1,38 @@
+﻿@page "/createroute"
+@rendermode InteractiveServer
+@using PickingRoute.Services
+@using PickingRoute.Models
+@inject RouteService RouteService
+
+<h1>ピッキングルート作成</h1>
+
+<button @onclick="CreateRouter">ルート作成</button>
+<h2>作成されたルート</h2> 
+<ul>
+	@if (RouteService.Routes.Any())
+	{
+		@foreach (var point in RouteService.Routes)
+		{
+			<li>Point: (X: @point.X, Y: @point.Y)</li>
+		}
+	}
+	else
+	{
+		<li>まだルートが作成されていません。</li>
+	}
+</ul>
+
+@code {
+    private void CreateRouter()
+    {
+
+        RouteService.Routes = new List<RoutePoint>
+        {
+            new RoutePoint { X = 74, Y = 102 },
+            new RoutePoint { X = 80, Y = 108 },
+            new RoutePoint { X = 169.8548716204727, Y = 106.85096072096582 }
+        };
+
+    }
+
+}

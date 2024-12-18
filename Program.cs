@@ -38,6 +38,7 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 
 builder.Services.AddScoped<ProductListService>();
 builder.Services.AddScoped<RouteCalculator>();
+builder.Services.AddSingleton<RouteService>();
 
 var app = builder.Build();
 
