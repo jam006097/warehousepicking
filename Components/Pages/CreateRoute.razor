@@ -1,38 +1,309 @@
 ﻿@page "/createroute"
 @rendermode InteractiveServer
-@using PickingRoute.Services
+@using Microsoft.EntityFrameworkCore
+@using PickingRoute.Data
 @using PickingRoute.Models
+@using PickingRoute.Services
+@inject ApplicationDbContext dbContext
 @inject RouteService RouteService
+@inject RouteCalculator RouteCalculator
 
-<h1>ピッキングルート作成</h1>
 
-<button @onclick="CreateRouter">ルート作成</button>
-<h2>作成されたルート</h2> 
+<h1>ピッキングリスト作成</h1>
+
+<h2>商品一覧</h2>
+@foreach (var item in _productItems)
+{
+	<ul>
+		<li>
+			@item.ProductName
+			<input type="checkbox" checked="@IsChecked(item)" @onclick="() => UpdatePickingList(item)">
+		</li>
+	</ul>
+}
+
+<h2>ピッキング対象一覧</h2>
+
 <ul>
-	@if (RouteService.Routes.Any())
+	@foreach (var item in _PickingItems)
 	{
-		@foreach (var point in RouteService.Routes)
+		<li>@item.ProductName</li>
+	}
+</ul>
+
+<!--ルート作成ボタン-->
+<button type="button" class="btn btn-primary" @onclick="() => CalculateGreedyRoute(_PickingItems)">
+	ルート作成
+</button>
+
+<!--クリアボタン--> 
+<button type="button" class="btn btn-secondary" @onclick="ClearPickingList"> 
+	クリア 
+</button>
+
+<h2>作成されたルート一覧</h2> 
+<ol>
+	@if (_optimalRoute.Any())
+	{
+		@foreach (var item in _optimalRoute)
 		{
-			<li>Point: (X: @point.X, Y: @point.Y)</li>
+			<li>商品名: @item.ProductName</li>
 		}
 	}
 	else
 	{
 		<li>まだルートが作成されていません。</li>
 	}
-</ul>
+</ol>
+
 
 @code {
-    private void CreateRouter()
+	private List<ProductItem> _productItems = new();
+	private List<ProductItem> _PickingItems = new List<ProductItem>();
+	private List<ProductItem> _optimalRoute = new();
+	private List<RoutePoint> routes = new List<RoutePoint>();
+	private List<Shelf> _Shelves = new();
+	private List<WarehousePath> _Paths = new();  
+
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	/// <returns></returns>
+	protected override async Task OnInitializedAsync()
+	{
+		_productItems = await dbContext.ProductItems.ToListAsync();
+		_Shelves = await dbContext.Shelves.ToListAsync();
+		_Paths = await dbContext.Paths.ToListAsync();
+
+		// 遷移後も状態が保持されるようにするため、RouteServiceからデータを取得 
+		_PickingItems = RouteService.PickingItems; 
+		_optimalRoute = RouteService.optimalItems; 
+		routes = RouteService.Routes;
+	}
+
+    /// <summary>
+    /// チェックボックスの状態を保持
+    /// </summary>
+    /// <param name="item"></param>
+    /// <returns></returns>
+    private bool IsChecked(ProductItem item)
     {
-
-        RouteService.Routes = new List<RoutePoint>
-        {
-            new RoutePoint { X = 74, Y = 102 },
-            new RoutePoint { X = 80, Y = 108 },
-            new RoutePoint { X = 169.8548716204727, Y = 106.85096072096582 }
-        };
-
+        return _PickingItems.Contains(item);
     }
 
+	/// <summary>
+	/// ピッキングリストを作成・更新する
+	/// </summary>
+	/// <param name="item"></param>
+	private void UpdatePickingList(ProductItem item)
+	{
+		if (!_PickingItems.Contains(item))
+		{
+			_PickingItems.Add(item);
+		}
+		else
+		{
+			_PickingItems.Remove(item);
+		}
+		// RouteServiceにも更新されたリストを保存 
+		RouteService.PickingItems = _PickingItems;
+	}
+
+	/// <summary>
+	/// 貪欲法を使用して、リスト内の商品を最短距離で並べ替えます。
+	/// </summary>
+	/// <param name="products"></param>
+	/// <returns></returns>
+	private void CalculateGreedyRoute(List<ProductItem> products)
+	{
+		_optimalRoute = new List<ProductItem>();
+		var remainingProducts = new List<ProductItem>(products);
+		var currentProduct = remainingProducts[0];
+
+		_optimalRoute.Add(currentProduct);
+		remainingProducts.RemoveAt(0);
+
+		while (remainingProducts.Any())
+		{
+			var nextProduct = remainingProducts
+				.OrderBy(p => GetDistance(currentProduct, p))
+				.First();
+			_optimalRoute.Add(nextProduct);
+			remainingProducts.Remove(nextProduct);
+			currentProduct = nextProduct;
+		}
+
+		// 計算したルートを更新 
+		UpdateRoutes(); 
+		// 計算したルートをRouteServiceに渡す 
+		RouteService.Routes = routes;
+		RouteService.optimalItems = _optimalRoute;
+
+	}
+
+	/// <summary>
+	///  ユーグリッド距離を計算します。
+	///  2点をまっすぐ結んだ線の長さです。
+	/// </summary>
+	/// <param name="a"></param>
+	/// <param name="b"></param>
+	/// <returns></returns>
+	private double GetDistance(ProductItem a, ProductItem b)
+	{
+		return Math.Sqrt(Math.Pow(a.Shelf.X - b.Shelf.X, 2) + Math.Pow(a.Shelf.Y - b.Shelf.Y, 2));
+	}
+
+	/// <summary>
+	/// 最適ルートの経路を更新します。
+	/// </summary>
+	private void UpdateRoutes()
+	{
+		routes.Clear();
+		for (int i = 0; i < _optimalRoute.Count - 1; i++)
+		{
+			var currentProduct = _optimalRoute[i];
+			var nextProduct = _optimalRoute[i + 1];
+
+			RoutePoint pointA, pointB;
+			var aisleA = RouteCalculator.FindNearestAisle(currentProduct, _Paths, out pointA);
+			var aisleB = RouteCalculator.FindNearestAisle(nextProduct, _Paths, out pointB);
+
+
+			if (aisleA == aisleB)
+			{
+				// 同じ通路上にある場合、そのまま結ぶ
+				routes.Add(pointA);
+				routes.Add(pointB);
+			}
+			else
+			{
+				// 通路の端点を通る経路を設定
+				AddPathBetweenEndpoints(pointA, pointB, aisleA, aisleB);
+			}
+
+
+		}
+	}
+
+	/// <summary>
+	/// 指定した2つの点間の最適経路を追加します。
+	/// 複数の通路の端点を経由して経路を設定します。
+	/// </summary>
+	/// <param name="pointA">始点の座標</param>
+	/// <param name="pointB">終点の座標</param>
+	/// <param name="aisleA">始点が属する通路</param>
+	/// <param name="aisleB">終点が属する通路</param>
+	private void AddPathBetweenEndpoints(RoutePoint pointA, RoutePoint pointB, WarehousePath aisleA, WarehousePath aisleB)
+	{
+		// 商品Aが直接繋げられるのはaisleAの始点終点だけ
+		var startPoints = new List<RoutePoint>
+	{
+	new RoutePoint { X = aisleA.StartX, Y = aisleA.StartY },
+	new RoutePoint { X = aisleA.EndX, Y = aisleA.EndY }
+	};
+
+		// 商品Bが直接繋げられるのはaisleBの始点終点だけ
+		var endPoints = new List<RoutePoint>
+	{
+	new RoutePoint { X = aisleB.StartX, Y = aisleB.StartY },
+	new RoutePoint { X = aisleB.EndX, Y = aisleB.EndY }
+	};
+
+		// 他の通路の端点もリストに追加
+		var allEndPoints = new List<RoutePoint>();
+		foreach (var path in _Paths)
+		{
+			if (path != aisleA && path != aisleB)
+			{
+				allEndPoints.Add(new RoutePoint { X = path.StartX, Y = path.StartY });
+				allEndPoints.Add(new RoutePoint { X = path.EndX, Y = path.EndY });
+			}
+		}
+
+		// 最適経路を格納するリスト
+		var optimalRoute = new List<RoutePoint>();
+
+		// 商品Aと直接繋げられる端点から最適経路を算出
+		double bestDistance = double.MaxValue;
+		RoutePoint bestStartPoint = null;
+		RoutePoint bestEndPoint = null;
+		foreach (var startPoint in startPoints)
+		{
+			// 商品Bと直接繋げられる端点から最適経路を算出
+			foreach (var endPoint in endPoints)
+			{
+				double distance = CalculateDistance(startPoint, endPoint);
+				if (distance < bestDistance)
+				{
+					bestDistance = distance;
+					bestStartPoint = startPoint;
+					bestEndPoint = endPoint;
+				}
+			}
+		}
+
+		// 最適な組み合わせを選ぶ
+		if (bestStartPoint != null && bestEndPoint != null)
+		{
+			optimalRoute.Add(bestStartPoint);
+			optimalRoute.Add(bestEndPoint);
+		}
+
+		// 他の通路の端点を含めた最適経路を算出
+		//const double thresholdDistance = 5.0;
+		for (int i = 0; i < allEndPoints.Count; i++)
+		{
+			for (int j = i + 1; j < allEndPoints.Count; j++)
+			{
+				var point1 = allEndPoints[i];
+				var point2 = allEndPoints[j];
+
+				double distance = CalculateDistance(point1, point2);
+				if (distance < bestDistance)
+				{
+					bestDistance = distance;
+					bestStartPoint = point1;
+					bestEndPoint = point2;
+				}
+			}
+		}
+
+		// 経路に商品座標を追加
+		routes.Add(pointA);
+		if (optimalRoute.Count > 0)
+		{
+			routes.Add(optimalRoute[0]);
+			for (int i = 1; i < optimalRoute.Count; i++)
+			{
+				routes.Add(optimalRoute[i]);
+			}
+		}
+		routes.Add(pointB);
+
+
+	}
+
+	/// <summary>
+	/// 2点間のユークリッド距離を計算します。
+	/// </summary>
+	/// <param name="a">点A</param>
+	/// <param name="b">点B</param>
+	/// <returns>2点間の距離</returns>
+	private double CalculateDistance(RoutePoint a, RoutePoint b)
+	{
+		return Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2));
+	}
+
+    /// <summary>
+    /// ピッキングリストをクリアします。
+    /// </summary>
+    private void ClearPickingList()
+    {
+        _PickingItems.Clear();
+        _optimalRoute.Clear();
+        routes.Clear();
+        RouteService.PickingItems = _PickingItems;
+        RouteService.optimalItems = _optimalRoute;
+        RouteService.Routes = routes;
+    }
 }
