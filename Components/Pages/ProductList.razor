@@ -36,21 +36,24 @@
         {
             <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                 @if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
-                {
-                    <!-- 更新フォーム -->
-                    <div class="card mt-4">
-                        <div class="card-body">
-                            <ProductItemEditor ProductItem="_editingProductItem" OnSubmit="UpdateProductAsync" ButtonText="Save" />
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <!-- 商品表示、編集・削除ボタン -->
-                    <div class="flex-grow-1 d-flex justify-content-between">
-                        <div>
-                            <div class="fw-bold">商品名：@item.ProductName</div>
-                            <div class="text-muted">保存場所：@item.Shelf.Name</div>
+				{
+					<div class="container my-5">
+						<h1 class="display-4 text-center mb-4"></h1>
+						<div class="card mt-4">
+							<div class="card-body">
+								<h5 class="card-title">商品を編集</h5>
+								<ProductItemEditor ProductItem="_editingProductItem" OnSubmit="UpdateProductAsync" ButtonText="Save" />
+							</div>
+						</div>
+					</div>
+				}
+				else
+				{
+					<!-- 商品表示、編集・削除ボタン -->
+					<div class="flex-grow-1 d-flex justify-content-between">
+						<div>
+							<div class="fw-bold">商品名：@item.ProductName</div>
+							<div class="text-muted">保存場所：@item.Shelf.Name</div>
                         </div>
                         <div>
                             <button @onclick="() => EnterEditMode(item)" class="btn btn-sm btn-primary me-2">Edit</button>
