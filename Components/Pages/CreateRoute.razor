@@ -7,6 +7,7 @@
 @inject ApplicationDbContext dbContext
 @inject RouteService RouteService
 @inject RouteCalculator RouteCalculator
+@inject NavigationManager NavigationManager
 
 
 <h1>ピッキングリスト作成</h1>
@@ -138,6 +139,9 @@
 		// 計算したルートをRouteServiceに渡す 
 		RouteService.Routes = routes;
 		RouteService.optimalItems = _optimalRoute;
+
+		// ViewRoute.razor へ遷移 
+		NavigationManager.NavigateTo("/viewroute");
 
 	}
 
