@@ -11,12 +11,12 @@ namespace PickingRoute.Models
 		public int ProductId { get; set; }
 
 		// 商品名
-		[Required(ErrorMessage = "ProductName is required.")]
-		[StringLength(10, ErrorMessage = "ProductName must be less than 10 characters.")]
+		[Required(ErrorMessage = "商品名の入力は必須です。")]
+		[StringLength(10, ErrorMessage = "商品名の最大文字数は10文字です。")]
 		public string ProductName { get; set; } = string.Empty;
 
 		//　棚のID
-		[Required(ErrorMessage = "ShelfId is required.")]
+		[Required(ErrorMessage = "保管場所の選択は必須です。")]
 		public int ShelfId { get; set; }
 
 		// 棚への参照

@@ -3,47 +3,65 @@
 @using PickingRoute.Data
 @inject ApplicationDbContext dbContext
 
-<!-- 商品の編集および追加フォーム -->
-<EditForm Model="@ProductItem" OnValidSubmit="OnSubmit" style="display: inline">
-	<!-- データ注釈バリデータ -->
-	<DataAnnotationsValidator />
+<!-- EditFormコンポーネントを使用して商品情報を編集または追加 -->
+<EditForm Model="@ProductItem" OnValidSubmit="OnSubmit" class="d-flex flex-wrap justify-content-between align-items-center gap-3 p-3" style="border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+    <DataAnnotationsValidator />
 
-	<!-- 商品名の入力フィールド -->
-	<InputText @bind-Value="ProductItem.ProductName" placeholder="Product Name" />
-	<ValidationMessage For="@(() => ProductItem.ProductName)" style="display: inline"/>
+    <!-- 商品名入力フィールド -->
+    <div class="flex-grow-1 position-relative mb-3 input-field" style="flex-basis: 40%;">
+        <InputText @bind-Value="ProductItem.ProductName" placeholder="商品名を入力してください" class="form-control" style="width: 100%;" />
+        <ValidationMessage For="@(() => ProductItem.ProductName)" class="position-absolute text-danger" style="top: 100%; left: 0;" />
+    </div>
 
-	<!-- 棚の選択フィールド -->
-	<InputSelect @bind-Value="ProductItem.ShelfId">
-		<option value="">Select Shelf</option>
-		@foreach (var shelf in Shelves)
-		{
-			<option value="@shelf.Id">@shelf.Name</option>
-		}
-	</InputSelect>
-	<ValidationMessage For="@(() => ProductItem.ShelfId)" style="display: inline" />
+    <!-- 棚選択フィールド -->
+    <div class="flex-grow-1 position-relative mb-3 input-field" style="flex-basis: 40%;">
+        <InputSelect @bind-Value="ProductItem.ShelfId" class="form-control" style="width: 100%;">
+            <option value="" disabled selected>棚を選択</option>
+            @foreach (var shelf in Shelves)
+            {
+                <option value="@shelf.Id">@shelf.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => ProductItem.ShelfId)" class="position-absolute text-danger" style="top: 100%; left: 0;" />
+    </div>
 
-	<!-- 送信ボタン -->
-	<button type="submit" class="btn btn-sm btn-primary me-2">@ButtonText</button>
-
+    <!-- 送信ボタン -->
+    <div class="flex-basis-auto">
+        <button type="submit" class="btn btn-primary" style="padding: 8px 20px;">@ButtonText</button>
+    </div>
 </EditForm>
 
 @code {
+    /// <summary>
+    /// 商品情報を表すモデル。
+    /// </summary>
+    [Parameter] public ProductItem ProductItem { get; set; } = new ProductItem();
 
-	// 商品アイテムのデータバインド
-	[Parameter] public ProductItem ProductItem { get; set; } = new ProductItem();
-	// ボタンテキストのデータバインド
-	[Parameter] public string ButtonText { get; set; } = "Submit";
-	// プレースホルダーのデータバインド
-	[Parameter] public string Placeholder { get; set; } = "";
-	// フォーム送信時のデリゲート
-	[Parameter] public Func<Task> OnSubmit { get; set; } = () => Task.CompletedTask;
+    /// <summary>
+    /// ボタンのテキスト。
+    /// </summary>
+    [Parameter] public string ButtonText { get; set; } = "Submit";
 
-	// 棚のリスト
-	private List<Shelf> Shelves = new List<Shelf>(); 
+    /// <summary>
+    /// プレースホルダーのテキスト。
+    /// </summary>
+    [Parameter] public string Placeholder { get; set; } = "";
 
-	// コンポーネントの初期化時に棚のリストを取得
-	protected override async Task OnInitializedAsync() 
-	{ 
-		Shelves = await dbContext.Shelves.ToListAsync(); 
-	}
+    /// <summary>
+    /// フォームが送信されたときに呼び出されるコールバック関数。
+    /// </summary>
+    [Parameter] public Func<Task> OnSubmit { get; set; } = () => Task.CompletedTask;
+
+    /// <summary>
+    /// 棚のリスト。
+    /// </summary>
+    private List<Shelf> Shelves = new List<Shelf>();
+
+    /// <summary>
+    /// コンポーネントの初期化時に棚のデータを取得。
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        Shelves = await dbContext.Shelves.ToListAsync();
+    }
 }

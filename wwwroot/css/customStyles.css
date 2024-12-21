@@ -1,4 +1,5 @@
-﻿/* コンテナのスタイル */
+﻿
+/* コンテナのスタイル */
 .svg-container {
     position: relative;
     width: 800px;
@@ -90,4 +91,64 @@ svg {
 /* その他のスタイル */
 .foreign-object-body {
     background-color: transparent;
+}
+
+/* Apple風のスタイル */
+body {
+    background-color: #f5f5f7;
+    color: #1d1d1f;
+}
+
+.container {
+    max-width: 900px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.card-title, .display-4 {
+    color: #0071e3;
+}
+
+.btn-primary {
+    background-color: #0071e3;
+    border-color: #0071e3;
+}
+
+.btn-danger {
+    background-color: #d32f2f;
+    border-color: #d32f2f;
+}
+
+.list-group-item {
+    border: none;
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    margin-bottom: 10px;
+}
+
+.list-group-item-action:hover {
+    background-color: #f1f1f1;
+}
+
+/* Validation Summary */
+.validation-summary-errors {
+    color: #d32f2f;
+    padding: 10px;
+}
+
+/* 位置関連のスタイル */
+.position-relative {
+    position: relative;
+}
+
+.position-absolute {
+    position: absolute;
+}
+
+/* 商品名入力欄の余白を確保するためのスタイル */
+.input-field {
+    margin-bottom: 1.5rem; /* 十分な余白を追加 */
 }

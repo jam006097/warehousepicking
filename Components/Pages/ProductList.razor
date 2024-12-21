@@ -1,153 +1,202 @@
-﻿@page "/productlist"
+﻿
+@page "/productlist"
 @using PickingRoute.Components.Shared
 @using PickingRoute.Models
 @using PickingRoute.Services
 @rendermode InteractiveServer
 @inject ProductListService _productService
 
-<PageTitle>ProducList</PageTitle>
+<PageTitle>Product List</PageTitle>
 
-<h1>商品一覧</h1>
+<!-- 商品追加枠 -->
+<div class="container my-5">
+    <h1 class="display-4 text-center mb-4">商品追加</h1>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">新しい商品を追加</h5>
+            <ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" ButtonText="Add" />
+        </div>
+    </div>
+</div>
 
-<!-- DBへの処理成否のメッセージ -->
-@if (!string.IsNullOrEmpty(_latestMessage))
-{
-	<div class="alert @(_isLatestMessageSuccess ? "alert-success" :"alert-danger")">
-		@_latestMessage
-	</div>
-}
+<!-- 商品一覧枠 -->
+<div class="container my-5">
+    <h1 class="display-4 text-center mb-4">商品一覧</h1>
 
-@foreach (var item in _productItems)
-{
-	<ul class="list-unstyled">
-		<li class="mb-3 d-flex align-items-center">
-			@if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
-			{
-				<!--更新-->
-				<ProductItemEditor ProductItem="_editingProductItem" OnSubmit="UpdateProductAsync" ButtonText="Save" />
-			}
-			else
-			{
-				<!--表示、編集ボタン-->
-				<div class="d-inline-block me-3">@item.ProductName</div>
-				<div class="d-inline-block me-3">@item.Shelf.Name</div>
-				<button @onclick="() => EnterEditMode(item)" class="btn btn-sm btn-primary me-2">Edit</button>
-			}
+    <!-- DBへの処理成否のメッセージ -->
+    @if (!string.IsNullOrEmpty(_latestMessage))
+    {
+        <div class="alert @(_isLatestMessageSuccess ? "alert-success" : "alert-danger")">
+            @_latestMessage
+        </div>
+    }
 
-			<!--削除ボタン-->
-			<button @onclick="() => DeleteProductAsync(item.ProductId)" class="btn btn-sm btn-danger">Delete</button>
-		</li>
-	</ul>
-
-}
-
-<!--新規追加-->
-<ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" ButtonText="Add" />
+    <div class="list-group">
+        @foreach (var item in _productItems)
+        {
+            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                @if (_editingProductItem != null && _editingProductItem.ProductId == item.ProductId)
+                {
+                    <!-- 更新フォーム -->
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <ProductItemEditor ProductItem="_editingProductItem" OnSubmit="UpdateProductAsync" ButtonText="Save" />
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- 商品表示、編集・削除ボタン -->
+                    <div class="flex-grow-1 d-flex justify-content-between">
+                        <div>
+                            <div class="fw-bold">商品名：@item.ProductName</div>
+                            <div class="text-muted">保存場所：@item.Shelf.Name</div>
+                        </div>
+                        <div>
+                            <button @onclick="() => EnterEditMode(item)" class="btn btn-sm btn-primary me-2">Edit</button>
+                            <button @onclick="() => DeleteProductAsync(item.ProductId)" class="btn btn-sm btn-danger">Delete</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
 
 @code {
-	// 商品リスト
-	private List<ProductItem> _productItems = new();
-	// 新規追加する商品
-	private ProductItem _newProductItem = new ProductItem();
-	// 編集中の商品
-	private ProductItem? _editingProductItem;
+    /// <summary>
+    /// 商品リストを管理するリスト。
+    /// </summary>
+    private List<ProductItem> _productItems = new();
 
-	// 処理結果のメッセージ
-	private string? _latestMessage;
-	private bool _isLatestMessageSuccess;
+    /// <summary>
+    /// 新規追加する商品のデータを保持するオブジェクト。
+    /// </summary>
+    private ProductItem _newProductItem = new ProductItem();
 
-	//初期化、商品リスト一覧の読み込み
-	protected override async Task OnInitializedAsync()
-	{
-		await ReloadProductsAsync();
-	}
+    /// <summary>
+    /// 編集中の商品のデータを保持するオブジェクト。
+    /// </summary>
+    private ProductItem? _editingProductItem;
 
-	// 商品一覧の読み込む
-	private async Task ReloadProductsAsync()
-	{
-		try
-		{
-			_productItems = await _productService.GetProductsAsync();
-		}
-		catch (ProductListServiceException ex)
-		{
-			SetUserMessage($"Error loading todos: {ex.Message}", false);
-		}
-	}
+    /// <summary>
+    /// 処理結果のメッセージ。
+    /// </summary>
+    private string? _latestMessage;
 
-	// 編集ボタンを押した時の処理
-	// 対象商品をインスタンス化し、プロパティ値をコピーする
-	private void EnterEditMode(ProductItem productItem)
-	{
-		_editingProductItem = new ProductItem
-			{
-				ProductId = productItem.ProductId,
-				ProductName = productItem.ProductName,
-				ShelfId = productItem.ShelfId, 
-				Shelf = productItem.Shelf
-			};
-	}
+    /// <summary>
+    /// 処理結果の成功可否を示すフラグ。
+    /// </summary>
+    private bool _isLatestMessageSuccess;
 
-	// 更新
-	private async Task UpdateProductAsync()
-	{
-		if (_editingProductItem != null)
-		{
-			try
-			{
-				await _productService.UpdateProductAsync(_editingProductItem);
-				// 更新後、変数を初期化
-				_editingProductItem = null;
-				// 再読み込み
-				await ReloadProductsAsync();
-				SetUserMessage("Puroduct item updated successfully.", true);
-			}
-			catch (ProductListServiceException ex)
-			{
-				SetUserMessage($"Error updating product: {ex.Message}", false);	
-			}
-		}
-	}
+    /// <summary>
+    /// 初期化、商品リスト一覧の読み込み。
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadProductsAsync();
+    }
 
-	// 削除
-	private async Task DeleteProductAsync(int id)
-	{
-		try
-		{
-			await _productService.DeleteProductAsync(id);
-			await ReloadProductsAsync();
-			SetUserMessage("Product item deleted successfully.", true);	
-		}
-		catch (ProductListServiceException ex)
-		{
-			SetUserMessage($"Error deleting product: {ex.Message}", false);
-		}
-	}
+    /// <summary>
+    /// 商品一覧を読み込むメソッド。
+    /// </summary>
+    private async Task ReloadProductsAsync()
+    {
+        try
+        {
+            _productItems = await _productService.GetProductsAsync();
+        }
+        catch (ProductListServiceException ex)
+        {
+            SetUserMessage($"Error loading products: {ex.Message}", false);
+        }
+    }
 
-	// 追加
-	private async Task AddTodoAsync()
-	{
-		try
-		{
-			await _productService.AddProductAsync(_newProductItem);
-			// 追加後、変数を初期化
-			_newProductItem = new ProductItem();
-			// 再読み込み
-			await ReloadProductsAsync();
-			SetUserMessage("Todo item added successfully.", true);
-		}
-		catch (ProductListServiceException ex)
-		{
-			SetUserMessage($"Error adding product: {ex.Message}", false);
-		}
-	}
+    /// <summary>
+    /// 編集ボタンを押した時の処理。
+    /// 対象商品をインスタンス化し、プロパティ値をコピーする。
+    /// </summary>
+    /// <param name="productItem">編集対象の商品データ</param>
+    private void EnterEditMode(ProductItem productItem)
+    {
+        _editingProductItem = new ProductItem
+        {
+            ProductId = productItem.ProductId,
+            ProductName = productItem.ProductName,
+            ShelfId = productItem.ShelfId,
+            Shelf = productItem.Shelf
+        };
+    }
 
-	// 処理結果のメッセージを設定
-	private void SetUserMessage(string message, bool isSuccess)
-	{
-		_latestMessage = message + " " + DateTime.Now.ToString("HH:mm:ss");
-		_isLatestMessageSuccess = isSuccess;
-	}
+    /// <summary>
+    /// 商品を更新するメソッド。
+    /// </summary>
+    private async Task UpdateProductAsync()
+    {
+        if (_editingProductItem != null)
+        {
+            try
+            {
+                await _productService.UpdateProductAsync(_editingProductItem);
+                // 更新後、変数を初期化
+                _editingProductItem = null;
+                // 再読み込み
+                await ReloadProductsAsync();
+                SetUserMessage("Product item updated successfully.", true);
+            }
+            catch (ProductListServiceException ex)
+            {
+                SetUserMessage($"Error updating product: {ex.Message}", false);
+            }
+        }
+    }
 
+    /// <summary>
+    /// 商品を削除するメソッド。
+    /// </summary>
+    /// <param name="id">削除対象の商品ID</param>
+    private async Task DeleteProductAsync(int id)
+    {
+        try
+        {
+            await _productService.DeleteProductAsync(id);
+            await ReloadProductsAsync();
+            SetUserMessage("Product item deleted successfully.", true);
+        }
+        catch (ProductListServiceException ex)
+        {
+            SetUserMessage($"Error deleting product: {ex.Message}", false);
+        }
+    }
 
+    /// <summary>
+    /// 新しい商品を追加するメソッド。
+    /// </summary>
+    private async Task AddTodoAsync()
+    {
+        try
+        {
+            await _productService.AddProductAsync(_newProductItem);
+            // 追加後、変数を初期化
+            _newProductItem = new ProductItem();
+            // 再読み込み
+            await ReloadProductsAsync();
+            SetUserMessage("Product item added successfully.", true);
+        }
+        catch (ProductListServiceException ex)
+        {
+            SetUserMessage($"Error adding product: {ex.Message}", false);
+        }
+    }
+
+    /// <summary>
+    /// 処理結果のメッセージを設定するメソッド。
+    /// </summary>
+    /// <param name="message">表示するメッセージ</param>
+    /// <param name="isSuccess">成功か失敗かを示すフラグ</param>
+    private void SetUserMessage(string message, bool isSuccess)
+    {
+        _latestMessage = message + " " + DateTime.Now.ToString("HH:mm:ss");
+        _isLatestMessageSuccess = isSuccess;
+    }
 }
