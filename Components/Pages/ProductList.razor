@@ -22,15 +22,6 @@
 <!-- 商品一覧枠 -->
 <div class="container my-5">
     <h1 class="display-4 text-center mb-4">商品一覧</h1>
-
-    <!-- DBへの処理成否のメッセージ -->
-    @if (!string.IsNullOrEmpty(_latestMessage))
-    {
-        <div class="alert @(_isLatestMessageSuccess ? "alert-success" : "alert-danger")">
-            @_latestMessage
-        </div>
-    }
-
     <div class="list-group">
         @foreach (var item in _productItems)
         {
@@ -65,6 +56,15 @@
         }
     </div>
 </div>
+
+<!-- 処理成否のメッセージ表示領域 -->
+@if (!string.IsNullOrEmpty(_latestMessage))
+{
+    <div class="fixed-bottom alert @(_isLatestMessageSuccess ? "alert-success" : "alert-danger") m-3" @onclick="ClearMessage">
+        @_latestMessage
+    </div>
+
+}
 
 @code {
     /// <summary>
@@ -201,5 +201,12 @@
     {
         _latestMessage = message + " " + DateTime.Now.ToString("HH:mm:ss");
         _isLatestMessageSuccess = isSuccess;
+    }
+
+    // メッセージをクリアするメソッド。
+    private void ClearMessage()
+    {
+        _latestMessage = null;
+        StateHasChanged();
     }
 }
