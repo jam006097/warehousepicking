@@ -1,47 +1,65 @@
 ﻿
+/* Apple風の全体スタイル */
+body {
+    background-color: #f5f5f7;
+    color: #1d1d1f;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
 /* コンテナのスタイル */
+.container {
+    max-width: 900px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin: 30px auto;
+}
+
+/* 見出しのスタイル */
+.display-4 {
+    color: #0071e3;
+    font-size: 2.5rem;
+    font-weight: 500;
+}
+
+/* SVGコンテナのスタイル */
 .svg-container {
     position: relative;
     width: 800px;
     height: 600px;
-    border: 1px solid #ddd; /* 軽い灰色のボーダーに変更 */
-    border-radius: 15px; /* 角を丸くする */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* ソフトな影を追加 */
-    background-color: #fafafa; /* 背景を明るい灰色に */
-    padding: 20px; /* パディングを追加 */
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: #fafafa;
+    padding: 20px;
     margin-bottom: 20px;
-}
-
-/* コントロールのスタイル */
-.outside-controls {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center; /* ボタンを中央揃え */
-    gap: 15px; /* ボタンの間隔を広げる */
 }
 
 /* SVGスタイル */
 svg {
     width: 100%;
     height: 100%;
-    border: none; /* SVG自体の枠線を削除 */
+    border: none;
 }
 
-/* 棚のデザイン */
+/* 棚のスタイル */
 .rect-selected {
-    fill: #4CAF50; /* モダンな緑色 */
-    stroke: #388E3C; /* ダークグリーンのストローク */
-    rx: 10; /* 角を丸くする */
+    fill: #4CAF50;
+    stroke: #388E3C;
+    rx: 10;
     ry: 10;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 影を付ける */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .rect-deselected {
-    fill: #8BC34A; /* モダンなライトグリーン */
-    stroke: #388E3C; /* ダークグリーンのストローク */
-    rx: 10; /* 角を丸くする */
+    fill: #8BC34A;
+    stroke: #388E3C;
+    rx: 10;
     ry: 10;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 影を付ける */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* テキストボックスのスタイル */
@@ -52,8 +70,8 @@ svg {
     max-width: 400px;
     padding: 2px;
     border: none;
-    font-family: 'Roboto', sans-serif; /* モダンなフォント */
-    color: #333; /* テキストカラーをダークグレーに */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
 }
 
 /* リサイズハンドルのスタイル */
@@ -62,35 +80,35 @@ svg {
     cursor: nwse-resize;
 }
 
-/* 通路のスタイル（灰色ベース） */
+/* 通路のスタイル */
 .line-selected {
-    stroke: #A9A9A9; /* ダークグレー */
+    stroke: #A9A9A9;
     stroke-width: 8;
-    stroke-linecap: round; /* 丸みを帯びた線の端 */
-    stroke-dasharray: 5; /* 破線 */
+    stroke-linecap: round;
+    stroke-dasharray: 5;
 }
 
 .line-deselected {
-    stroke: #D3D3D3; /* ライトグレー */
+    stroke: #D3D3D3;
     stroke-width: 8;
-    stroke-linecap: round; /* 丸みを帯びた線の端 */
-    stroke-dasharray: 5; /* 破線 */
+    stroke-linecap: round;
+    stroke-dasharray: 5;
 }
 
 /* 通路の端点スタイル */
 .circle-start, .circle-end {
-    stroke: #696969; /* ダークグレーの枠線 */
+    stroke: #696969;
     stroke-width: 1;
 }
 
 .circle-start {
-    fill: #808080; /* グレー */
-    r: 6; /* 大きさを少し大きく */
+    fill: #808080;
+    r: 6;
 }
 
 .circle-end {
-    fill: #A9A9A9; /* ダークグレー */
-    r: 6; /* 大きさを少し大きく */
+    fill: #A9A9A9;
+    r: 6;
 }
 
 /* その他のスタイル */
@@ -98,26 +116,7 @@ svg {
     background-color: transparent;
 }
 
-/* Apple風のスタイル */
-body {
-    background-color: #f5f5f7;
-    color: #1d1d1f;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-.container {
-    max-width: 900px;
-    background: #ffffff;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* ソフトな影を追加 */
-    padding: 25px;
-    margin-top: 30px;
-}
-
-.card-title, .display-4 {
-    color: #0071e3;
-}
-
+/* ボタンのスタイル */
 .btn-primary {
     background-color: #0071e3;
     border-color: #0071e3;
@@ -126,11 +125,11 @@ body {
     font-size: 16px;
     font-weight: 500;
     transition: background-color 0.3s ease;
+    color: #fff;
 }
 
 .btn-primary:hover {
     background-color: #005bb5;
-    color: #fff;
 }
 
 .btn-danger {
@@ -167,5 +166,5 @@ body {
 
 /* 商品名入力欄の余白を確保するためのスタイル */
 .input-field {
-    margin-bottom: 1.5rem; /* 十分な余白を追加 */
+    margin-bottom: 1.5rem;
 }
