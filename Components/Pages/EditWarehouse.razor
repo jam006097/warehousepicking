@@ -8,55 +8,56 @@
 @inject RouteCalculator RouteCalculator
 
 
-<h1>倉庫配置図の編集</h1>
+<div class="container my-5">
+    <h1 class="display-4 text-center mb-4">倉庫配置図の編集</h1>
 
-<!-- SVG 要素内でのマウスの動きを追跡 -->
-<div class="svg-container">
-	<svg width="800" height="600" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onkeydown="HandleKeyDown" tabindex="0">
+    <!-- SVG 要素内でのマウスの動きを追跡 -->
+    <div class="svg-container">
+        <svg width="800" height="600" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onkeydown="HandleKeyDown" tabindex="0">
 
-		<!-- 背面に描画するために通路を先に描画 -->
-		@foreach (var path in _Paths)
-		{
-			<line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" 
-			class="@((path == selectedPath) ? "line-selected" : "line-deselected")" stroke-width="10" 
-			@onmousedown="@(e => OnPathMouseDown(e, path))" @onclick="@(e => SelectPath(path))"/>
-			<circle cx="@path.StartX" cy="@path.StartY" r="5" class="circle-start" 
-			@onmousedown="@(e => OnPathStartMouseDown(e, path))" />
-			<circle cx="@path.EndX" cy="@path.EndY" r="5" class="circle-end" 
-			@onmousedown="@(e => OnPathEndMouseDown(e, path))" />
-		}
+            <!-- 背面に描画するために通路を先に描画 -->
+            @foreach (var path in _Paths)
+            {
+                <line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" 
+                class="@((path == selectedPath) ? "line-selected" : "line-deselected")" stroke-width="10" 
+                @onmousedown="@(e => OnPathMouseDown(e, path))" @onclick="@(e => SelectPath(path))"/>
+                <circle cx="@path.StartX" cy="@path.StartY" r="5" class="circle-start" 
+                @onmousedown="@(e => OnPathStartMouseDown(e, path))" />
+                <circle cx="@path.EndX" cy="@path.EndY" r="5" class="circle-end" 
+                @onmousedown="@(e => OnPathEndMouseDown(e, path))" />
+            }
 
-		@foreach (var shelf in _Shelves)
-		{
-			<!-- 棚の位置とサイズを描画 -->
-			<rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" 
-			class="@(shelf == selectedShelf ? "rect-selected" : "rect-deselected")" stroke="black" 
-			@onmousedown="@(e => OnShelfMouseDown(e, shelf))" @onclick="@(e => SelectShelf(shelf))"/>
+            @foreach (var shelf in _Shelves)
+            {
+                <!-- 棚の位置とサイズを描画 -->
+                <rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" 
+                class="@(shelf == selectedShelf ? "rect-selected" : "rect-deselected")" 
+                @onmousedown="@(e => OnShelfMouseDown(e, shelf))" @onclick="@(e => SelectShelf(shelf))"/>
 
-			<foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30" style="pointer-events: none;">
-				<body xmlns="http://www.w3.org/1999/xhtml" class="foreign-object-body">
-					<!-- 棚の名前を表示するテキストボックス。ダブルクリックで編集モードになる -->
-					<input type="text" id="shelf-@shelf.Id" @bind="shelf.Name" @onblur="@(async e => await OnShelfNameChanged(shelf))" 
-					class="form-control-plaintext input-plaintext" style="pointer-events: auto;" size="@Math.Max(1, shelf.Name.Length)" autocomplete="off" />
+                <foreignObject x="@(shelf.X)" y="@(shelf.Y)" width="450" height="30" style="pointer-events: none;">
+                    <body xmlns="http://www.w3.org/1999/xhtml" class="foreign-object-body">
+                        <!-- 棚の名前を表示するテキストボックス。ダブルクリックで編集モードになる -->
+                        <input type="text" id="shelf-@shelf.Id" @bind="shelf.Name" @onblur="@(async e => await OnShelfNameChanged(shelf))" 
+                        class="form-control-plaintext input-plaintext" style="pointer-events: auto;" size="@Math.Max(1, shelf.Name.Length)" autocomplete="off" />
 
-				</body>
-			</foreignObject>
+                    </body>
+                </foreignObject>
 
-			<!-- リサイズハンドルを描画 --> 
-			<polygon points="@(shelf.X + shelf.Width - 10),@(shelf.Y + shelf.Height) 
-                             @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height - 10) 
-                             @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height)" 
-			class="resize-handle" @onmousedown="@(e => OnResizeHandleMouseDown(e, shelf))" style="pointer-events: all;" />
-		}
-	</svg>
+                <!-- リサイズハンドルを描画 --> 
+                <polygon points="@(shelf.X + shelf.Width - 10),@(shelf.Y + shelf.Height) 
+                                 @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height - 10) 
+                                 @(shelf.X + shelf.Width),@(shelf.Y + shelf.Height)" 
+                class="resize-handle" @onmousedown="@(e => OnResizeHandleMouseDown(e, shelf))" style="pointer-events: all;" />
+            }
+        </svg>
+    </div>
+
+    <!-- SVG枠外に配置するボタン -->
+    <div class="outside-controls text-center mt-3">
+        <button class="btn btn-primary me-2" @onclick="async () => await AddNewShelf()">新しい棚を追加</button>
+        <button class="btn btn-primary" @onclick="async () => await AddNewPath()">新しい通路を追加</button>
+    </div>
 </div>
-
-<!-- SVG枠外に配置するボタン -->
-<div class="outside-controls">
-	<button class="btn btn-primary" @onclick="async () => await AddNewShelf()">新しい棚を追加</button>
-	<button class="btn btn-primary" @onclick="async () => await AddNewPath()">新しい通路を追加</button>
-</div>
-
 
 @code {
 
