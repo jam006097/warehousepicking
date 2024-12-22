@@ -9,54 +9,53 @@
 @inject RouteCalculator RouteCalculator
 @inject NavigationManager NavigationManager
 
+<div class="container apple-container">
+    <h1 class="display-4 apple-display text-center mb-4">ピッキングリスト作成</h1>
 
-<h1>ピッキングリスト作成</h1>
+    <h2 class="apple-subheading">商品一覧</h2>
+    @foreach (var item in _productItems)
+    {
+        <ul class="apple-list">
+            <li class="apple-list-item">
+                @item.ProductName
+                <input type="checkbox" class="form-check-input apple-checkbox" checked="@IsChecked(item)" @onclick="() => UpdatePickingList(item)">
+            </li>
+        </ul>
+    }
 
-<h2>商品一覧</h2>
-@foreach (var item in _productItems)
-{
-	<ul>
-		<li>
-			@item.ProductName
-			<input type="checkbox" checked="@IsChecked(item)" @onclick="() => UpdatePickingList(item)">
-		</li>
-	</ul>
-}
+    <h2 class="apple-subheading">ピッキング対象一覧</h2>
+    <ul class="apple-list">
+        @foreach (var item in _PickingItems)
+        {
+            <li class="apple-list-item">@item.ProductName</li>
+        }
+    </ul>
 
-<h2>ピッキング対象一覧</h2>
+    <!-- ルート作成ボタン -->
+    <button type="button" class="btn btn-primary apple-button" @onclick="() => CalculateGreedyRoute(_PickingItems)">
+        ルート作成
+    </button>
 
-<ul>
-	@foreach (var item in _PickingItems)
-	{
-		<li>@item.ProductName</li>
-	}
-</ul>
+    <!-- クリアボタン -->
+    <button type="button" class="btn btn-secondary apple-button" @onclick="ClearPickingList">
+        クリア
+    </button>
 
-<!--ルート作成ボタン-->
-<button type="button" class="btn btn-primary" @onclick="() => CalculateGreedyRoute(_PickingItems)">
-	ルート作成
-</button>
-
-<!--クリアボタン--> 
-<button type="button" class="btn btn-secondary" @onclick="ClearPickingList"> 
-	クリア 
-</button>
-
-<h2>作成されたルート一覧</h2> 
-<ol>
-	@if (_optimalRoute.Any())
-	{
-		@foreach (var item in _optimalRoute)
-		{
-			<li>商品名: @item.ProductName</li>
-		}
-	}
-	else
-	{
-		<li>まだルートが作成されていません。</li>
-	}
-</ol>
-
+    <h2 class="apple-subheading">作成されたルート一覧</h2>
+    <ol class="apple-list">
+        @if (_optimalRoute.Any())
+        {
+            @foreach (var item in _optimalRoute)
+            {
+                <li class="apple-list-item">商品名: @item.ProductName</li>
+            }
+        }
+        else
+        {
+            <li class="apple-list-item">まだルートが作成されていません。</li>
+        }
+    </ol>
+</div>
 
 @code {
 	private List<ProductItem> _productItems = new();
