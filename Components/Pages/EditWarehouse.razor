@@ -7,6 +7,7 @@
 @inject ApplicationDbContext dbContext
 @inject RouteCalculator RouteCalculator
 
+<article class="content px-4">
 <div class="container my-5">
     <h1 class="display-4 text-center mb-4">倉庫配置図の編集</h1>
 
@@ -57,6 +58,7 @@
         <button class="btn btn-primary" @onclick="async () => await AddNewPath()">新しい通路を追加</button>
     </div>
 </div>
+</article>
 
 @code {
 

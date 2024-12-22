@@ -47,6 +47,21 @@
             }
         </svg>
     </div>
+
+    <h2 class="apple-subheading">ルート</h2>
+    <ol class="apple-list">
+        @if (RouteService.optimalItems.Any())
+        {
+            @foreach (var item in RouteService.optimalItems)
+            {
+                <li class="apple-list-item">商品名: @item.ProductName</li>
+            }
+        }
+        else
+        {
+            <li class="apple-list-item">まだルートが作成されていません。</li>
+        }
+    </ol>
 </div>
 
 

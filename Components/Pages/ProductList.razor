@@ -10,18 +10,18 @@
 
 <!-- 商品追加枠 -->
 <div class="container my-5">
-    <h1 class="display-4 text-center mb-4">商品追加</h1>
+    <h1 class="display-4 text-center mb-4">商品を追加する</h1>
     <div class="card mt-4">
         <div class="card-body">
-            <h5 class="card-title">新しい商品を追加</h5>
-            <ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" ButtonText="Add" />
+            <h5 class="card-title">新しい商品名を入力してください。保管場所を選択してください。</h5>
+            <ProductItemEditor ProductItem="_newProductItem" OnSubmit="AddTodoAsync" ButtonText="追加" />
         </div>
     </div>
 </div>
 
 <!-- 商品一覧枠 -->
 <div class="container my-5">
-    <h1 class="display-4 text-center mb-4">商品一覧</h1>
+    <h1 class="display-4 text-center mb-4">商品の一覧</h1>
     <div class="list-group">
         @foreach (var item in _productItems)
         {
@@ -32,8 +32,8 @@
 						<h1 class="display-4 text-center mb-4"></h1>
 						<div class="card mt-4">
 							<div class="card-body">
-								<h5 class="card-title">商品を編集</h5>
-								<ProductItemEditor ProductItem="_editingProductItem" OnSubmit="UpdateProductAsync" ButtonText="Save" />
+								<h5 class="card-title">編集後の商品名を入力してください。保管場所を選択してください。</h5>
+								<ProductItemEditor ProductItem="_editingProductItem" OnSubmit="UpdateProductAsync" ButtonText="保存" />
 							</div>
 						</div>
 					</div>
@@ -47,8 +47,8 @@
 							<div class="text-muted">保存場所：@item.Shelf.Name</div>
                         </div>
                         <div>
-                            <button @onclick="() => EnterEditMode(item)" class="btn btn-sm btn-primary me-2">Edit</button>
-                            <button @onclick="() => DeleteProductAsync(item.ProductId)" class="btn btn-sm btn-danger ">Delete</button>
+                            <button @onclick="() => EnterEditMode(item)" class="btn btn-sm btn-primary me-2">編集</button>
+                            <button @onclick="() => DeleteProductAsync(item.ProductId)" class="btn btn-sm btn-danger ">削除</button>
                         </div>
                     </div>
                 }
