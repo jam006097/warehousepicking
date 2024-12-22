@@ -109,7 +109,7 @@
         {
             _productItems = await _productService.GetProductsAsync();
         }
-        catch (ProductListServiceException ex)
+        catch (Exception ex)
         {
             SetUserMessage($"商品の読み込みエラー: {ex.Message}", false);
         }
@@ -147,7 +147,7 @@
                 await ReloadProductsAsync();
                 SetUserMessage("商品が正常に更新されました。", true);
             }
-            catch (ProductListServiceException ex)
+            catch (Exception ex)
             {
                 SetUserMessage($"商品の更新エラー: {ex.Message}", false);
             }
@@ -166,7 +166,7 @@
             await ReloadProductsAsync();
             SetUserMessage("商品が正常に削除されました。", true);
         }
-        catch (ProductListServiceException ex)
+        catch (Exception ex)
         {
             SetUserMessage($"商品の削除エラー: {ex.Message}", false);
         }
@@ -186,7 +186,7 @@
             await ReloadProductsAsync();
             SetUserMessage("商品が正常に追加されました。", true);
         }
-        catch (ProductListServiceException ex)
+        catch (Exception ex)
         {
             SetUserMessage($"商品の追加エラー: {ex.Message}", false);
         }
@@ -201,6 +201,7 @@
     {
         _latestMessage = message + " " + DateTime.Now.ToString("HH:mm:ss");
         _isLatestMessageSuccess = isSuccess;
+        StateHasChanged();
     }
 
     // メッセージをクリアするメソッド。

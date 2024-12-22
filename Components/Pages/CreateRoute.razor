@@ -41,22 +41,6 @@
         クリア
     </button>
 
-	@*
-    <h2 class="apple-subheading">作成されたルート一覧</h2>
-    <ol class="apple-list">
-        @if (_optimalRoute.Any())
-        {
-            @foreach (var item in _optimalRoute)
-            {
-                <li class="apple-list-item">商品名: @item.ProductName</li>
-            }
-        }
-        else
-        {
-            <li class="apple-list-item">まだルートが作成されていません。</li>
-        }
-    </ol>
-	*@
 </div>
 
 @code {
