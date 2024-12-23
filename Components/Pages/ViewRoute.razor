@@ -14,43 +14,55 @@
     <!--倉庫の配置図-->
     <div class="svg-container">
         <svg width="800" height="600" tabindex="0">
-            @foreach (var path in _Paths)
+            @if (_Paths != null)
             {
-                <line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" class="line-deselected" stroke-width="10" />
+                @foreach (var path in _Paths)
+                {
+                    <line x1="@path.StartX" y1="@path.StartY" x2="@path.EndX" y2="@path.EndY" class="line-deselected" stroke-width="10" />
+                }
             }
 
-            @foreach (var shelf in _Shelves)
+            @if (_Shelves != null)
             {
-                <!-- 棚の位置とサイズを描画 -->
-                <rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" class="rect-deselected" />
+                @foreach (var shelf in _Shelves)
+                {
+                    <!-- 棚の位置とサイズを描画 -->
+                    <rect x="@shelf.X" y="@shelf.Y" width="@shelf.Width" height="@shelf.Height" class="rect-deselected" />
+                }
             }
 
-            <!-- 最適経路を描画 -->
-            @for (int i = 0; i < RouteService.Routes.Count - 1; i++)
-            {
-                var pointA = RouteService.Routes[i];
-                var pointB = RouteService.Routes[i + 1];
-                <!-- 経路のラインを描画 -->
-                <line x1="@pointA.X" y1="@pointA.Y" x2="@pointB.X" y2="@pointB.Y" stroke="rgba(173, 216, 230, 0.8)" stroke-width="10" />
-            }
+			@if (RouteService.Routes != null)
+			{
+				<!-- 最適経路を描画 -->
+				@for (int i = 0; i < RouteService.Routes.Count - 1; i++)
+				{
+					var pointA = RouteService.Routes[i];
+					var pointB = RouteService.Routes[i + 1];
+					<!-- 経路のラインを描画 -->
+					<line x1="@pointA.X" y1="@pointA.Y" x2="@pointB.X" y2="@pointB.Y" stroke="rgba(173, 216, 230, 0.8)" stroke-width="10" />
+				}
+			}
 
-            @for (int i = 0; i < RouteService.optimalItems.Count; i++)
-            {
-                var item = RouteService.optimalItems[i];
-                var shelf = item.Shelf;
-                var textx = shelf.X;
-                var texty = shelf.Y + 10;
-                <!-- 商品名を描画 -->
-                <foreignObject x="@textx" y="@texty" width="200" height="20">
-                    @(i + 1). @item.ProductName
-                </foreignObject>
-            }
-        </svg>
+			@if (RouteService.optimalItems != null)
+			{
+				@for (int i = 0; i < RouteService.optimalItems.Count; i++)
+				{
+					var item = RouteService.optimalItems[i];
+					var shelf = item.Shelf;
+					var textx = shelf.X;
+					var texty = shelf.Y + 10;
+					<!-- 商品名を描画 -->
+					<foreignObject x="@textx" y="@texty" width="200" height="20">
+						@(i + 1). @item.ProductName
+					</foreignObject>
+				}
+			}
+		</svg>
     </div>
 
     <h2 class="apple-subheading">ルート</h2>
     <ol class="apple-list">
-        @if (RouteService.optimalItems.Any())
+        @if (RouteService.optimalItems != null && RouteService.optimalItems.Any())
         {
             @foreach (var item in RouteService.optimalItems)
             {
@@ -77,8 +89,16 @@
 	/// <returns></returns>
 	protected override async Task OnInitializedAsync()
 	{
-		_Shelves = await dbContext.Shelves.ToListAsync();
-		_Paths = await dbContext.Paths.ToListAsync();
+		try
+		{
+			_Shelves = await dbContext.Shelves.ToListAsync();
+			_Paths = await dbContext.Paths.ToListAsync();
+
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"データ読み込みエラー: {ex.Message}");
+		}
 	}
 
 }
