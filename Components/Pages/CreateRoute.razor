@@ -111,13 +111,19 @@
 	/// <returns></returns>
 	private void CalculateGreedyRoute()
 	{
+		if (_PickingItems == null || !_PickingItems.Any())
+		{
+			Console.WriteLine("ピッキングリストが空です。");
+			return;
+		}
+
 		_optimalRoute = new List<ProductItem>(_PickingItems);
 		var remainingProducts = new List<ProductItem>(_PickingItems);
-		var currentProduct = remainingProducts[0];
+		var currentProduct = remainingProducts.FirstOrDefault();
 		_optimalRoute.Clear();
 
 		_optimalRoute.Add(currentProduct);
-		remainingProducts.RemoveAt(0);
+		remainingProducts.Remove(currentProduct);
 
 		while (remainingProducts.Any())
 		{
