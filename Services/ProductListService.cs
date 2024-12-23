@@ -11,7 +11,7 @@ namespace PickingRoute.Services
 		// コンストラクタ
 		public ProductListService(ApplicationDbContext context)
 		{
-			_context = context;
+			_context = context ?? throw new ArgumentNullException(nameof(context));
 		}
 
 		// 商品一覧を取得
@@ -20,8 +20,8 @@ namespace PickingRoute.Services
 			// 関数を実行し、エラーなら例外を投げます
 			return await ExecuteWithExceptionHandlingAsync(
 				async () => await _context.ProductItems.Include(p => p.Shelf).ToListAsync(), // ラムダ式で関数を渡します。
-				"Failed to retrieve product items."
-			);　// 例外時のエラーメッセージ
+				"商品の取得に失敗しました。"
+			); // 例外時のエラーメッセージ
 
 		}
 
@@ -34,11 +34,18 @@ namespace PickingRoute.Services
 				async () =>
 				{
 					var existingProductItem = await GetProductItemAsyncFromID(productItemInput.ProductId);
-					existingProductItem.ProductName = productItemInput.ProductName;
-					existingProductItem.ShelfId = productItemInput.ShelfId;
-					await _context.SaveChangesAsync();
+					if (existingProductItem != null)
+					{
+						existingProductItem.ProductName = productItemInput.ProductName;
+						existingProductItem.ShelfId = productItemInput.ShelfId;
+						await _context.SaveChangesAsync();
+					}
+					else
+					{
+						throw new ProductListServiceException("更新対象の商品が見つかりませんでした。");
+					}
 				},
-				"Failed to Update product item."
+				"商品の更新に失敗しました。"
 			); // 例外時のエラーメッセージ
 		}
 
@@ -51,26 +58,38 @@ namespace PickingRoute.Services
 				async () =>
 				{
 					var existingProductItem = await GetProductItemAsyncFromID(productId);
-					_context.ProductItems.Remove(existingProductItem);
-					await _context.SaveChangesAsync();
+					if (existingProductItem != null)
+					{
+						_context.ProductItems.Remove(existingProductItem);
+						await _context.SaveChangesAsync();
+					}
+					else
+					{
+						throw new ProductListServiceException("削除対象の商品が見つかりませんでした。");
+					}
 				},
-				"Failed to delete product item."
+				"商品の削除に失敗しました。"
 			); //例外時のエラーメッセージ
 		}
 
 		// 商品の追加
 		public async Task AddProductAsync(ProductItem newProductItem)
 		{
+			if (newProductItem == null)
+			{
+				throw new ArgumentNullException(nameof(newProductItem));
+			}
+
 			// 関数を実行し、エラーなら例外を投げます
 			// 特定の型を返さないTaskを返す関数を渡します
 			await ExecuteWithExceptionHandlingAsync(
 				// ラムダ式で関数を渡します。
 				async () =>
 				{
-					_context.ProductItems.Add(newProductItem);
+					await _context.ProductItems.AddAsync(newProductItem);
 					await _context.SaveChangesAsync();
 				},
-				"Failed to add product item."
+				"商品の追加に失敗しました。"
 			); //例外時のエラーメッセージ
 		}
 
@@ -80,9 +99,9 @@ namespace PickingRoute.Services
 		{
 			var productItem = await _context.ProductItems.Include(p => p.Shelf).FirstOrDefaultAsync(p => p.ProductId == productId);
 			// 商品一覧を取得出来なかった場合、カスタム例外をスローします
-			if (productItem == null) 
+			if (productItem == null)
 			{
-				throw new ProductListServiceException("Product item not found or access denied.");
+				throw new ProductListServiceException("商品が見つからないか、アクセスが拒否されました。");
 			}
 			return productItem;
 		}
@@ -96,7 +115,7 @@ namespace PickingRoute.Services
 			{
 				return await func();
 			}
-			catch (Exception ex) 
+			catch (Exception ex)
 			{
 				throw new ProductListServiceException(errorMessage, ex);
 			}
@@ -111,11 +130,16 @@ namespace PickingRoute.Services
 			{
 				await func();
 			}
-			catch (Exception ex) 
+			catch (Exception ex)
 			{
 				throw new ProductListServiceException(errorMessage, ex);
 			}
 		}
-
+		// カスタム例外クラス	
+		public class ProductListServiceException : Exception
+		{
+			public ProductListServiceException(string message) : base(message) { }
+			public ProductListServiceException(string message, Exception innerException) : base(message, innerException) { }
+		}
 	}
 }

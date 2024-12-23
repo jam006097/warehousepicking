@@ -26,7 +26,8 @@ body {
 /* SVGコンテナのスタイル */
 .svg-container {
     position: relative;
-    width: 800px;
+    width: 100%;
+    max-width: 800px;
     height: 600px;
     border: 1px solid #ddd;
     border-radius: 15px;
@@ -209,6 +210,7 @@ li {
 .btn-secondary:hover {
     background-color: #ddd;
 }
+/* 削除ボタンのスタイル */
 .btn-danger { 
     background-color: #d32f2f; 
     border-color: #d32f2f; 

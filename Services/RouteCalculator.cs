@@ -12,6 +12,9 @@ namespace PickingRoute.Services
 		/// <returns>最寄りの通路上の地点</returns>
 		public static RoutePoint FindNearestPointOnAisle(ProductItem product, WarehousePath aisle)
 		{
+			if (product == null) throw new ArgumentNullException(nameof(product));
+			if (aisle == null) throw new ArgumentNullException(nameof(aisle));
+
 			// 通路のベクトルを計算
 			double dx = aisle.EndX - aisle.StartX;
 			double dy = aisle.EndY - aisle.StartY;
@@ -50,6 +53,9 @@ namespace PickingRoute.Services
 		/// <returns>最寄りの通路</returns>
 		public static WarehousePath FindNearestAisle(ProductItem product, List<WarehousePath> aisles, out RoutePoint nearestPoint)
 		{
+			if (product == null) throw new ArgumentNullException(nameof(product));
+			if (aisles == null || aisles.Count == 0) throw new ArgumentNullException(nameof(aisles));
+
 			double minDistance = double.MaxValue;
 			WarehousePath nearestAisle = null;
 			nearestPoint = null;
@@ -65,7 +71,10 @@ namespace PickingRoute.Services
 					nearestPoint = point;
 				}
 			}
-
+			if (nearestAisle == null || nearestPoint == null)
+			{
+				throw new InvalidOperationException("最寄りの通路が見つかりませんでした。");
+			}
 			return nearestAisle;
 		}
 	}
