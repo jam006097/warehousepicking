@@ -16,7 +16,7 @@
     <!-- 棚選択フィールド -->
     <div class="flex-grow-1 position-relative mb-3 input-field" style="flex-basis: 40%;">
         <InputSelect @bind-Value="ProductItem.ShelfId" class="form-control" style="width: 100%;">
-            <option value="" disabled selected>棚を選択</option>
+            <option value="" disabled >棚を選択</option>
             @foreach (var shelf in Shelves)
             {
                 <option value="@shelf.Id">@shelf.Name</option>

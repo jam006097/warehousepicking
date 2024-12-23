@@ -10,36 +10,36 @@
 @inject NavigationManager NavigationManager
 
 <div class="container apple-container">
-    <h1 class="display-4 apple-display text-center mb-4">ピッキングリスト作成</h1>
+	<h1 class="display-4 apple-display text-center mb-4">ピッキングリスト作成</h1>
 
-    <h2 class="apple-subheading">商品一覧</h2>
-    @foreach (var item in _productItems)
-    {
-        <ul class="apple-list">
-            <li class="apple-list-item">
-                @item.ProductName
-                <input type="checkbox" class="form-check-input apple-checkbox" checked="@IsChecked(item)" @onclick="() => UpdatePickingList(item)">
-            </li>
-        </ul>
-    }
+	<h2 class="apple-subheading">商品一覧</h2>
+	@foreach (var item in _productItems)
+	{
+		<ul class="apple-list">
+			<li class="apple-list-item">
+				@item.ProductName
+				<input type="checkbox" class="form-check-input apple-checkbox" checked="@IsChecked(item)" @onclick="() => UpdatePickingList(item)">
+			</li>
+		</ul>
+	}
 
-    <h2 class="apple-subheading">ピッキング対象一覧</h2>
-    <ul class="apple-list">
-        @foreach (var item in _PickingItems)
-        {
-            <li class="apple-list-item">@item.ProductName</li>
-        }
-    </ul>
+	<h2 class="apple-subheading">ピッキング対象一覧</h2>
+	<ul class="apple-list">
+		@foreach (var item in _PickingItems)
+		{
+			<li class="apple-list-item">@item.ProductName</li>
+		}
+	</ul>
 
-    <!-- ルート作成ボタン -->
-    <button type="button" class="btn btn-primary apple-button" @onclick="() => CalculateGreedyRoute(_PickingItems)">
-        ルート作成
-    </button>
+	<!-- ルート作成ボタン -->
+	<button type="button" class="btn btn-primary apple-button" @onclick="CalculateGreedyRoute">
+		ルート作成
+	</button>
 
-    <!-- クリアボタン -->
-    <button type="button" class="btn btn-secondary apple-button" @onclick="ClearPickingList">
-        クリア
-    </button>
+	<!-- クリアボタン -->
+	<button type="button" class="btn btn-secondary apple-button" @onclick="ClearPickingList">
+		クリア
+	</button>
 
 </div>
 
@@ -57,25 +57,33 @@
 	/// <returns></returns>
 	protected override async Task OnInitializedAsync()
 	{
-		_productItems = await dbContext.ProductItems.ToListAsync();
-		_Shelves = await dbContext.Shelves.ToListAsync();
-		_Paths = await dbContext.Paths.ToListAsync();
+		try
+		{
+			_productItems = await dbContext.ProductItems.ToListAsync();
+			_Shelves = await dbContext.Shelves.ToListAsync();
+			_Paths = await dbContext.Paths.ToListAsync();
 
-		// 遷移後も状態が保持されるようにするため、RouteServiceからデータを取得 
-		_PickingItems = RouteService.PickingItems; 
-		_optimalRoute = RouteService.optimalItems; 
-		routes = RouteService.Routes;
+			// 遷移後も状態が保持されるようにするため、RouteServiceからデータを取得 
+			_PickingItems = RouteService.PickingItems; 
+			_optimalRoute = RouteService.optimalItems; 
+			routes = RouteService.Routes;
+
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"データ読み込みエラー：{ex.Message}");
+		}
 	}
 
-    /// <summary>
-    /// チェックボックスの状態を保持
-    /// </summary>
-    /// <param name="item"></param>
-    /// <returns></returns>
-    private bool IsChecked(ProductItem item)
-    {
-        return _PickingItems.Contains(item);
-    }
+	/// <summary>
+	/// チェックボックスの状態を保持
+	/// </summary>
+	/// <param name="item"></param>
+	/// <returns></returns>
+	private bool IsChecked(ProductItem item)
+	{
+		return _PickingItems.Contains(item);
+	}
 
 	/// <summary>
 	/// ピッキングリストを作成・更新する
@@ -93,6 +101,7 @@
 		}
 		// RouteServiceにも更新されたリストを保存 
 		RouteService.PickingItems = _PickingItems;
+		StateHasChanged();
 	}
 
 	/// <summary>
@@ -100,11 +109,12 @@
 	/// </summary>
 	/// <param name="products"></param>
 	/// <returns></returns>
-	private void CalculateGreedyRoute(List<ProductItem> products)
+	private void CalculateGreedyRoute()
 	{
-		_optimalRoute = new List<ProductItem>();
-		var remainingProducts = new List<ProductItem>(products);
+		_optimalRoute = new List<ProductItem>(_PickingItems);
+		var remainingProducts = new List<ProductItem>(_PickingItems);
 		var currentProduct = remainingProducts[0];
+		_optimalRoute.Clear();
 
 		_optimalRoute.Add(currentProduct);
 		remainingProducts.RemoveAt(0);
@@ -239,7 +249,6 @@
 		}
 
 		// 他の通路の端点を含めた最適経路を算出
-		//const double thresholdDistance = 5.0;
 		for (int i = 0; i < allEndPoints.Count; i++)
 		{
 			for (int j = i + 1; j < allEndPoints.Count; j++)
@@ -283,16 +292,17 @@
 		return Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2));
 	}
 
-    /// <summary>
-    /// ピッキングリストをクリアします。
-    /// </summary>
-    private void ClearPickingList()
-    {
-        _PickingItems.Clear();
-        _optimalRoute.Clear();
-        routes.Clear();
-        RouteService.PickingItems = _PickingItems;
-        RouteService.optimalItems = _optimalRoute;
-        RouteService.Routes = routes;
-    }
+	/// <summary>
+	/// ピッキングリストをクリアします。
+	/// </summary>
+	private void ClearPickingList()
+	{
+		_PickingItems.Clear();
+		_optimalRoute.Clear();
+		routes.Clear();
+		RouteService.PickingItems = _PickingItems;
+		RouteService.optimalItems = _optimalRoute;
+		RouteService.Routes = routes;
+		StateHasChanged();
+	}
 }
